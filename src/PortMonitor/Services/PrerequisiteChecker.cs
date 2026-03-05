@@ -243,6 +243,13 @@ public static class PrerequisiteChecker
     {
         if (item.WingetId is null) return;
 
+        // Security: validate WingetId is safe (alphanumeric, dots, hyphens, underscores only)
+        if (!System.Text.RegularExpressions.Regex.IsMatch(item.WingetId, @"^[\w.\-]+$"))
+        {
+            progress?.Invoke($"  ✗ Invalid package ID: {item.WingetId}");
+            return;
+        }
+
         void Report(string msg) { progress?.Invoke(msg); Console.WriteLine(msg); }
 
         Report($"  → Installing {item.Name} via winget...");

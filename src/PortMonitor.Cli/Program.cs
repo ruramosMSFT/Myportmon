@@ -22,7 +22,7 @@ string? logPath = null;
 for (int i = 0; i < args.Length; i++)
 {
     if (args[i] == "--interval" && i + 1 < args.Length && int.TryParse(args[i + 1], out int iv))
-        interval = Math.Max(1, iv);
+        interval = Math.Clamp(iv, 1, 300);   // cap at 5 minutes
     else if (args[i] == "--log" && i + 1 < args.Length)
         logPath = args[i + 1];
 }
@@ -62,6 +62,7 @@ var poller   = new ConnectionPoller();
 var diff     = new DiffEngine();
 var state    = new AppState { PageSize = Math.Max(5, Console.WindowHeight - 8) };
 var renderer = new ConsoleRenderer(state, interval, logPath);
+var stateLock = new object();   // protects AppState shared between main & key-input threads
 
 using var cts = new CancellationTokenSource();
 
@@ -78,54 +79,57 @@ var keyTask = Task.Run(() =>
 
         var key = Console.ReadKey(true);
 
-        // Filter-entry mode
-        if (state.IsEnteringFilter)
+        lock (stateLock)
         {
-            HandleFilterInput(key, state);
-            continue;
-        }
+            // Filter-entry mode
+            if (state.IsEnteringFilter)
+            {
+                HandleFilterInput(key, state);
+                continue;
+            }
 
-        switch (key.Key)
-        {
-            case ConsoleKey.Q:
-                cts.Cancel();
-                break;
+            switch (key.Key)
+            {
+                case ConsoleKey.Q:
+                    cts.Cancel();
+                    break;
 
-            case ConsoleKey.F:
-                state.IsEnteringFilter = true;
-                state.FilterInput = state.Filter;
-                break;
+                case ConsoleKey.F:
+                    state.IsEnteringFilter = true;
+                    state.FilterInput = state.Filter;
+                    break;
 
-            case ConsoleKey.S:
-                state.CycleSortColumn();
-                break;
+                case ConsoleKey.S:
+                    state.CycleSortColumn();
+                    break;
 
-            case ConsoleKey.L:
-                state.View = state.View == ViewMode.ListenOnly
-                    ? ViewMode.All
-                    : ViewMode.ListenOnly;
-                state.Page = 0;
-                break;
+                case ConsoleKey.L:
+                    state.View = state.View == ViewMode.ListenOnly
+                        ? ViewMode.All
+                        : ViewMode.ListenOnly;
+                    state.Page = 0;
+                    break;
 
-            case ConsoleKey.E:
-                state.View = state.View == ViewMode.EstablishedOnly
-                    ? ViewMode.All
-                    : ViewMode.EstablishedOnly;
-                state.Page = 0;
-                break;
+                case ConsoleKey.E:
+                    state.View = state.View == ViewMode.EstablishedOnly
+                        ? ViewMode.All
+                        : ViewMode.EstablishedOnly;
+                    state.Page = 0;
+                    break;
 
-            case ConsoleKey.R:
-                state.ResetFilters();
-                diff.Reset();
-                break;
+                case ConsoleKey.R:
+                    state.ResetFilters();
+                    diff.Reset();
+                    break;
 
-            case ConsoleKey.UpArrow:
-                state.ScrollUp();
-                break;
+                case ConsoleKey.UpArrow:
+                    state.ScrollUp();
+                    break;
 
-            case ConsoleKey.DownArrow:
-                state.ScrollDown();
-                break;
+                case ConsoleKey.DownArrow:
+                    state.ScrollDown();
+                    break;
+            }
         }
     }
 }, cts.Token);
@@ -137,7 +141,7 @@ try
     {
         var raw     = poller.Poll();
         var entries = diff.Apply(raw);
-        renderer.Render(entries);
+        lock (stateLock) { renderer.Render(entries); }
 
         await Task.Delay(interval * 1000, cts.Token);
     }

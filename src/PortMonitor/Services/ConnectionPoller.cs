@@ -77,6 +77,7 @@ public class ConnectionPoller
             {
                 try { _processCache[proc.Id] = proc.ProcessName; }
                 catch { /* individual process may have exited */ }
+                finally { proc.Dispose(); }
             }
         }
         catch { /* access denied at enumeration level */ }
@@ -97,7 +98,7 @@ public class ConnectionPoller
 
         try
         {
-            var proc = Process.GetProcessById(pid);
+            using var proc = Process.GetProcessById(pid);
             _processCache[pid] = proc.ProcessName;
             return proc.ProcessName;
         }

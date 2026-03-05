@@ -74,6 +74,8 @@ internal static class IpHelper
         uint reserved = 0);
 
     private const int AfInet = 2;      // IPv4
+    private const uint ErrorInsufficientBuffer = 122;
+    private const int  MaxRetries = 3;
 
     // ── Public API ──────────────────────────────────────────────────────────
 
@@ -84,34 +86,39 @@ internal static class IpHelper
     public static IEnumerable<(uint State, string LocalAddr, int LocalPort,
                                 string RemoteAddr, int RemotePort, int Pid)> GetTcpConnections()
     {
-        int bufferSize = 0;
-        GetExtendedTcpTable(IntPtr.Zero, ref bufferSize, true, AfInet, TcpTableClass.TcpTableOwnerPidAll);
-
-        IntPtr table = Marshal.AllocHGlobal(bufferSize);
-        try
+        for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
-            uint result = GetExtendedTcpTable(table, ref bufferSize, true, AfInet, TcpTableClass.TcpTableOwnerPidAll);
-            if (result != 0) yield break;
+            int bufferSize = 0;
+            GetExtendedTcpTable(IntPtr.Zero, ref bufferSize, true, AfInet, TcpTableClass.TcpTableOwnerPidAll);
 
-            int numEntries = Marshal.ReadInt32(table);
-            IntPtr rowPtr  = table + 4;
-            int    rowSize = Marshal.SizeOf<MibTcpRowOwnerPid>();
-
-            for (int i = 0; i < numEntries; i++)
+            IntPtr table = Marshal.AllocHGlobal(bufferSize);
+            try
             {
-                var row       = Marshal.PtrToStructure<MibTcpRowOwnerPid>(rowPtr);
-                var localAddr = new IPAddress(row.dwLocalAddr).ToString();
-                var remoteAddr= new IPAddress(row.dwRemoteAddr).ToString();
-                int localPort = NetworkToHostPort(row.dwLocalPort);
-                int remotePort= NetworkToHostPort(row.dwRemotePort);
+                uint result = GetExtendedTcpTable(table, ref bufferSize, true, AfInet, TcpTableClass.TcpTableOwnerPidAll);
+                if (result == ErrorInsufficientBuffer) continue;   // table grew between calls — retry
+                if (result != 0) yield break;
 
-                yield return (row.dwState, localAddr, localPort, remoteAddr, remotePort, (int)row.dwOwningPid);
-                rowPtr += rowSize;
+                int numEntries = Marshal.ReadInt32(table);
+                IntPtr rowPtr  = table + 4;
+                int    rowSize = Marshal.SizeOf<MibTcpRowOwnerPid>();
+
+                for (int i = 0; i < numEntries; i++)
+                {
+                    var row       = Marshal.PtrToStructure<MibTcpRowOwnerPid>(rowPtr);
+                    var localAddr = new IPAddress(row.dwLocalAddr).ToString();
+                    var remoteAddr= new IPAddress(row.dwRemoteAddr).ToString();
+                    int localPort = NetworkToHostPort(row.dwLocalPort);
+                    int remotePort= NetworkToHostPort(row.dwRemotePort);
+
+                    yield return (row.dwState, localAddr, localPort, remoteAddr, remotePort, (int)row.dwOwningPid);
+                    rowPtr += rowSize;
+                }
+                yield break;   // success — no retry needed
             }
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(table);
+            finally
+            {
+                Marshal.FreeHGlobal(table);
+            }
         }
     }
 
@@ -121,32 +128,37 @@ internal static class IpHelper
     /// <returns>Sequence of (LocalAddr, LocalPort, Pid).</returns>
     public static IEnumerable<(string LocalAddr, int LocalPort, int Pid)> GetUdpListeners()
     {
-        int bufferSize = 0;
-        GetExtendedUdpTable(IntPtr.Zero, ref bufferSize, true, AfInet, UdpTableClass.UdpTableOwnerPid);
-
-        IntPtr table = Marshal.AllocHGlobal(bufferSize);
-        try
+        for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
-            uint result = GetExtendedUdpTable(table, ref bufferSize, true, AfInet, UdpTableClass.UdpTableOwnerPid);
-            if (result != 0) yield break;
+            int bufferSize = 0;
+            GetExtendedUdpTable(IntPtr.Zero, ref bufferSize, true, AfInet, UdpTableClass.UdpTableOwnerPid);
 
-            int numEntries = Marshal.ReadInt32(table);
-            IntPtr rowPtr  = table + 4;
-            int    rowSize = Marshal.SizeOf<MibUdpRowOwnerPid>();
-
-            for (int i = 0; i < numEntries; i++)
+            IntPtr table = Marshal.AllocHGlobal(bufferSize);
+            try
             {
-                var row       = Marshal.PtrToStructure<MibUdpRowOwnerPid>(rowPtr);
-                var localAddr = new IPAddress(row.dwLocalAddr).ToString();
-                int localPort = NetworkToHostPort(row.dwLocalPort);
+                uint result = GetExtendedUdpTable(table, ref bufferSize, true, AfInet, UdpTableClass.UdpTableOwnerPid);
+                if (result == ErrorInsufficientBuffer) continue;   // table grew — retry
+                if (result != 0) yield break;
 
-                yield return (localAddr, localPort, (int)row.dwOwningPid);
-                rowPtr += rowSize;
+                int numEntries = Marshal.ReadInt32(table);
+                IntPtr rowPtr  = table + 4;
+                int    rowSize = Marshal.SizeOf<MibUdpRowOwnerPid>();
+
+                for (int i = 0; i < numEntries; i++)
+                {
+                    var row       = Marshal.PtrToStructure<MibUdpRowOwnerPid>(rowPtr);
+                    var localAddr = new IPAddress(row.dwLocalAddr).ToString();
+                    int localPort = NetworkToHostPort(row.dwLocalPort);
+
+                    yield return (localAddr, localPort, (int)row.dwOwningPid);
+                    rowPtr += rowSize;
+                }
+                yield break;   // success
             }
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(table);
+            finally
+            {
+                Marshal.FreeHGlobal(table);
+            }
         }
     }
 

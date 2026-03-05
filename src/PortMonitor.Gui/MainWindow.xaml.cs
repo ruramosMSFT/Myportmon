@@ -65,6 +65,12 @@ public partial class MainWindow : Window
                 Refresh();
                 _ = FetchPublicIpAsync();
             };
+
+            Closed += (_, _) =>
+            {
+                _timer.Stop();
+                _self.Dispose();
+            };
         }
         catch (Exception ex)
         {
@@ -92,9 +98,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusRefresh.Text = $"Poll error: {ex.Message}";
-            MessageBox.Show($"Error polling connections:\n\n{ex}", "PortMonitor",
-                            MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            return;   // skip this cycle — timer will retry next tick
         }
 
         // Apply state filter
@@ -220,7 +224,19 @@ public partial class MainWindow : Window
     {
         try
         {
-            string ip = (await _http.GetStringAsync("https://api.ipify.org")).Trim();
+            using var response = await _http.GetAsync("https://api.ipify.org",
+                HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            // Guard: reject responses larger than 64 bytes (a valid IP is max ~45 chars)
+            if (response.Content.Headers.ContentLength > 64)
+            {
+                StatusPublicIp.Text = "invalid";
+                return;
+            }
+
+            string ip = (await response.Content.ReadAsStringAsync()).Trim();
+            if (ip.Length > 45) ip = ip[..45];   // IPv6 max is 45 chars
             StatusPublicIp.Text = ip;
         }
         catch
