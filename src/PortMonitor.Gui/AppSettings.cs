@@ -16,6 +16,7 @@ public class AppSettings
 
     // ── Internal store ────────────────────────────────────────────────────────
     private Dictionary<string, string> _colors;
+    private Dictionary<string, bool> _flags;
 
     public AppSettings()
     {
@@ -47,6 +48,10 @@ public class AppSettings
             ["FgUdp"]               = "#FF00DDDD",
             ["FgDefault"]           = "#FFD4D4D4",
         };
+        _flags = new Dictionary<string, bool>
+        {
+            ["DnsEnabled"] = true,
+        };
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -56,16 +61,23 @@ public class AppSettings
 
     public void SetHex(string key, string hex) => _colors[key] = hex;
 
+    public bool GetFlag(string key) =>
+        _flags.TryGetValue(key, out var v) && v;
+
+    public void SetFlag(string key, bool value) => _flags[key] = value;
+
     public AppSettings Clone()
     {
         var clone = new AppSettings();
         clone._colors = new Dictionary<string, string>(_colors);
+        clone._flags  = new Dictionary<string, bool>(_flags);
         return clone;
     }
 
     public static void CopyFrom(AppSettings source)
     {
         Current._colors = new Dictionary<string, string>(source._colors);
+        Current._flags  = new Dictionary<string, bool>(source._flags);
     }
 
     /// <summary>Pushes all stored colors into WPF Application.Resources.</summary>
@@ -86,8 +98,13 @@ public class AppSettings
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            var payload = new Dictionary<string, object>
+            {
+                ["colors"] = _colors,
+                ["flags"]  = _flags
+            };
             File.WriteAllText(_path, JsonSerializer.Serialize(
-                _colors, new JsonSerializerOptions { WriteIndented = true }));
+                payload, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch { /* non-fatal */ }
     }
@@ -107,11 +124,33 @@ public class AppSettings
             if (File.Exists(_path))
             {
                 var json = File.ReadAllText(_path);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                if (dict != null)
+
+                // Try new format: { "colors": {...}, "flags": {...} }
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("colors", out var colorsEl))
                 {
                     var s = new AppSettings();
-                    foreach (var (k, v) in dict)
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(colorsEl.GetRawText());
+                    if (dict != null)
+                        foreach (var (k, v) in dict)
+                            if (s._colors.ContainsKey(k)) s._colors[k] = v;
+
+                    if (doc.RootElement.TryGetProperty("flags", out var flagsEl))
+                    {
+                        var flags = JsonSerializer.Deserialize<Dictionary<string, bool>>(flagsEl.GetRawText());
+                        if (flags != null)
+                            foreach (var (k, v) in flags)
+                                if (s._flags.ContainsKey(k)) s._flags[k] = v;
+                    }
+                    return s;
+                }
+
+                // Legacy format: flat { "BgPrimaryBrush": "#FF...", ... }
+                var legacy = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                if (legacy != null)
+                {
+                    var s = new AppSettings();
+                    foreach (var (k, v) in legacy)
                         if (s._colors.ContainsKey(k)) s._colors[k] = v;
                     return s;
                 }

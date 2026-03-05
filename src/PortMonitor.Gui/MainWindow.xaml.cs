@@ -59,6 +59,12 @@ public partial class MainWindow : Window
             _lastCpuTime  = _self.TotalProcessorTime;
             _lastCpuCheck = DateTime.UtcNow;
 
+            // Restore DNS toggle from persisted settings
+            bool dnsOn = AppSettings.Current.GetFlag("DnsEnabled");
+            BtnDns.IsChecked     = dnsOn;
+            _poller.DnsEnabled   = dnsOn;
+            ColRemoteHost.Visibility = dnsOn ? Visibility.Visible : Visibility.Collapsed;
+
             Loaded += (_, _) =>
             {
                 _timer.Start();
@@ -272,5 +278,19 @@ public partial class MainWindow : Window
         var dlg = new SettingsWindow { Owner = this };
         dlg.ShowDialog();
         _timer.Start();
+    }
+
+    private void DnsToggle_Click(object sender, RoutedEventArgs e)
+    {
+        bool enabled = BtnDns.IsChecked == true;
+        _poller.DnsEnabled       = enabled;
+        ColRemoteHost.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+
+        // Persist
+        AppSettings.Current.SetFlag("DnsEnabled", enabled);
+        AppSettings.Current.Save();
+
+        // Immediate refresh so the column appears/disappears right away
+        Refresh();
     }
 }

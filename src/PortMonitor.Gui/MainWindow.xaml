@@ -64,6 +64,17 @@
                         Click="Colors_Click"
                         ToolTip="Customize application colors" />
 
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                           Background="{DynamicResource BorderBrush}" Margin="6,0" />
+
+                <ToggleButton x:Name="BtnDns"
+                              Content="🌐 DNS"
+                              IsChecked="True"
+                              Margin="2,0"
+                              Padding="8,3"
+                              Click="DnsToggle_Click"
+                              ToolTip="Toggle reverse DNS hostname resolution for remote addresses" />
+
             </WrapPanel>
         </Border>
 
@@ -202,7 +213,8 @@
                 <DataGridTextColumn Header="Process"
                                     Binding="{Binding ProcessName}"
                                     Width="140" />
-                <DataGridTextColumn Header="Remote Host"
+                <DataGridTextColumn x:Name="ColRemoteHost"
+                                    Header="Remote Host"
                                     Binding="{Binding RemoteHost}"
                                     Width="*" />
             </DataGrid.Columns>

@@ -17,6 +17,9 @@ public class ConnectionPoller
     private DateTime _cacheExpiry = DateTime.MinValue;
     private const int MaxDnsCacheSize = 4096;
 
+    /// <summary>When false, DNS resolution is skipped entirely and RemoteHost is always empty.</summary>
+    public bool DnsEnabled { get; set; } = true;
+
     /// <summary>
     /// Returns a snapshot of all current TCP and UDP connections with resolved process names.
     /// </summary>
@@ -42,7 +45,7 @@ public class ConnectionPoller
                 State         = IpHelper.MapTcpState(tcp.State),
                 Pid           = tcp.Pid,
                 ProcessName   = ResolveProcessName(tcp.Pid),
-                RemoteHost    = GetCachedDns(tcp.RemoteAddr)
+                RemoteHost    = DnsEnabled ? GetCachedDns(tcp.RemoteAddr) : string.Empty
             };
             entry.ComputeKey();
             if (seen.Add(entry.Key))
