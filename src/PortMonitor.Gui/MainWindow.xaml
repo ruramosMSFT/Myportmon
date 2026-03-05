@@ -98,21 +98,58 @@
             </StatusBarItem>
         </StatusBar>
 
-        <!-- ══ Legend strip ══════════════════════════════════════════════════ -->
+        <!-- ══ State filter strip ═════════════════════════════════════════ -->
         <Border DockPanel.Dock="Bottom"
                 Background="{DynamicResource BgSecondaryBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="8,2">
-            <WrapPanel Orientation="Horizontal">
-                <TextBlock Margin="0,0,12,0">
-                    <Run Foreground="{DynamicResource FgNew}"         Text="■ NEW  " />
-                    <Run Foreground="{DynamicResource FgClosed}"      Text="■ CLOSED  " />
-                    <Run Foreground="{DynamicResource FgListen}"      Text="■ LISTEN  " />
-                    <Run Foreground="{DynamicResource FgEstablished}" Text="■ ESTABLISHED  " />
-                    <Run Foreground="{DynamicResource FgTimeWait}"    Text="■ TIME_WAIT / CLOSE_WAIT  " />
-                    <Run Foreground="{DynamicResource FgUdp}"         Text="■ UDP" />
-                </TextBlock>
+                Padding="8,3">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="State Filter:" VerticalAlignment="Center"
+                           Foreground="{DynamicResource FgMutedBrush}"
+                           FontSize="11" Margin="0,0,8,0" />
+                <ToggleButton x:Name="BtnNew"
+                              Content="■ NEW"
+                              Style="{StaticResource StateFilterButton}"
+                              Background="{DynamicResource ColorNew}"
+                              Foreground="{DynamicResource FgNew}"
+                              Tag="New" Click="StateFilter_Click" Margin="2,1"
+                              ToolTip="Filter: show only NEW connections" />
+                <ToggleButton x:Name="BtnClosed"
+                              Content="■ CLOSED"
+                              Style="{StaticResource StateFilterButton}"
+                              Background="{DynamicResource ColorClosed}"
+                              Foreground="{DynamicResource FgClosed}"
+                              Tag="Closed" Click="StateFilter_Click" Margin="2,1"
+                              ToolTip="Filter: show only CLOSED connections" />
+                <ToggleButton x:Name="BtnListen"
+                              Content="■ LISTEN"
+                              Style="{StaticResource StateFilterButton}"
+                              Background="{DynamicResource ColorListen}"
+                              Foreground="{DynamicResource FgListen}"
+                              Tag="Listen" Click="StateFilter_Click" Margin="2,1"
+                              ToolTip="Filter: show only LISTEN ports" />
+                <ToggleButton x:Name="BtnEstab"
+                              Content="■ ESTABLISHED"
+                              Style="{StaticResource StateFilterButton}"
+                              Background="{DynamicResource ColorEstablished}"
+                              Foreground="{DynamicResource FgEstablished}"
+                              Tag="Established" Click="StateFilter_Click" Margin="2,1"
+                              ToolTip="Filter: show only ESTABLISHED connections" />
+                <ToggleButton x:Name="BtnTimeWait"
+                              Content="■ TIME_WAIT"
+                              Style="{StaticResource StateFilterButton}"
+                              Background="{DynamicResource ColorTimeWait}"
+                              Foreground="{DynamicResource FgTimeWait}"
+                              Tag="TimeWait" Click="StateFilter_Click" Margin="2,1"
+                              ToolTip="Filter: show TIME_WAIT / CLOSE_WAIT connections" />
+                <ToggleButton x:Name="BtnUdp"
+                              Content="■ UDP"
+                              Style="{StaticResource StateFilterButton}"
+                              Background="{DynamicResource ColorUdp}"
+                              Foreground="{DynamicResource FgUdp}"
+                              Tag="Udp" Click="StateFilter_Click" Margin="2,1"
+                              ToolTip="Filter: show only UDP endpoints" />
             </WrapPanel>
         </Border>
 

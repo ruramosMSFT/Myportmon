@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 
 namespace PortMonitor.Gui;
@@ -23,9 +24,10 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<ConnectionViewModel> _rows = [];
 
     // ── Filter / sort state ───────────────────────────────────────────────────
-    private string    _filter      = string.Empty;
-    private SortMode  _sort        = SortMode.Port;
-    private bool      _initialized;
+    private string           _filter       = string.Empty;
+    private readonly HashSet<string> _stateFilters = [];
+    private SortMode         _sort         = SortMode.Port;
+    private bool             _initialized;
 
     private enum SortMode { Port, Pid, State, Process }
 
@@ -88,8 +90,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Apply text filter
+        // Apply state filter
         var filtered = merged.AsEnumerable();
+        if (_stateFilters.Count > 0)
+        {
+            filtered = filtered.Where(e =>
+                (_stateFilters.Contains("New")         && e.IsNew)                                                        ||
+                (_stateFilters.Contains("Closed")      && e.IsClosed)                                                     ||
+                (_stateFilters.Contains("Listen")      && e.StateDisplay == "LISTEN")                                     ||
+                (_stateFilters.Contains("Established") && e.StateDisplay == "ESTABLISHED")                                ||
+                (_stateFilters.Contains("TimeWait")    && (e.StateDisplay == "TIME_WAIT" || e.StateDisplay == "CLOSE_WAIT")) ||
+                (_stateFilters.Contains("Udp")         && e.Protocol == "UDP")
+            );
+        }
+
+        // Apply text filter
         if (_filter.Length > 0)
         {
             filtered = filtered.Where(e =>
@@ -135,6 +150,17 @@ public partial class MainWindow : Window
         FilterBox.Text = string.Empty;   // triggers TextChanged → Refresh
     }
 
+    private void StateFilter_Click(object sender, RoutedEventArgs e)
+    {
+        var btn = (ToggleButton)sender;
+        var key = (string)btn.Tag;
+        if (btn.IsChecked == true)
+            _stateFilters.Add(key);
+        else
+            _stateFilters.Remove(key);
+        Refresh();
+    }
+
     private void SortCombo_Changed(object sender, SelectionChangedEventArgs e)
     {
         _sort = (SortCombo.SelectedIndex) switch
@@ -164,6 +190,13 @@ public partial class MainWindow : Window
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
         FilterBox.Text              = string.Empty;
+        _stateFilters.Clear();
+        BtnNew.IsChecked            = false;
+        BtnClosed.IsChecked         = false;
+        BtnListen.IsChecked         = false;
+        BtnEstab.IsChecked          = false;
+        BtnTimeWait.IsChecked       = false;
+        BtnUdp.IsChecked            = false;
         _sort                       = SortMode.Port;
         SortCombo.SelectedIndex     = 0;
         IntervalCombo.SelectedIndex = 1;

@@ -187,6 +187,52 @@
             </Style.Triggers>
         </Style>
 
+        <!-- ── StateFilterButton (legend-bar toggle buttons) ──────────────── -->
+        <Style x:Key="StateFilterButton" TargetType="ToggleButton">
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Padding"         Value="8,3" />
+            <Setter Property="FontFamily"      Value="Consolas" />
+            <Setter Property="FontSize"        Value="11" />
+            <Setter Property="FontWeight"      Value="SemiBold" />
+            <Setter Property="Cursor"          Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Opacity="0.45"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontFamily="{TemplateBinding FontFamily}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="White" />
+                                <Setter TargetName="Bd" Property="Opacity"     Value="1.0" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.75" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked"   Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Opacity" Value="1.0" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ── DataGrid ──────────────────────────────────────────────────── -->
         <Style TargetType="DataGrid">
             <Setter Property="Background"            Value="{DynamicResource BgPrimaryBrush}" />
