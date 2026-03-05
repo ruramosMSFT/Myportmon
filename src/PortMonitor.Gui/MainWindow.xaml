@@ -32,73 +32,40 @@
                 <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                            Background="{DynamicResource BorderBrush}" Margin="6,0" />
 
-                <!-- Settings dropdown button (Dropdown Button pattern per UI best practices) -->
+                <!-- Settings dropdown -->
                 <Button x:Name="BtnSettings"
+                        Content="⚙ Settings"
                         Margin="2,0"
+                        Padding="8,3"
                         Click="Settings_Click"
-                        ToolTip="Application settings"
-                        Cursor="Hand">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd"
-                                    Background="{DynamicResource BgControlBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="10,5">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚙" FontSize="13"
-                                               Foreground="{DynamicResource FgPrimaryBrush}"
-                                               VerticalAlignment="Center" Margin="0,0,5,0" />
-                                    <TextBlock Text="Settings"
-                                               FontFamily="Consolas" FontSize="12"
-                                               Foreground="{DynamicResource FgPrimaryBrush}"
-                                               VerticalAlignment="Center" Margin="0,0,4,0" />
-                                    <TextBlock Text="▾" FontSize="10"
-                                               Foreground="{DynamicResource FgMutedBrush}"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd" Property="Background"
-                                            Value="{DynamicResource BgControlHoverBrush}" />
-                                    <Setter TargetName="Bd" Property="BorderBrush"
-                                            Value="{DynamicResource BgAccentBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="Bd" Property="Background"
-                                            Value="{DynamicResource BgAccentBrush}" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
+                        ToolTip="Application settings">
                     <Button.ContextMenu>
                         <ContextMenu x:Name="SettingsMenu">
-                            <MenuItem Header="  Refresh Interval">
-                                <MenuItem Header="  1 second"   Click="Interval1_Click" />
-                                <MenuItem Header="  2 seconds"  Click="Interval2_Click" />
-                                <MenuItem Header="  5 seconds"  Click="Interval5_Click" />
-                                <MenuItem Header="  10 seconds" Click="Interval10_Click" />
+                            <!-- Refresh interval -->
+                            <MenuItem Header="Refresh Interval">
+                                <MenuItem Header="1 second"  Click="Interval1_Click" />
+                                <MenuItem Header="2 seconds" Click="Interval2_Click" />
+                                <MenuItem Header="5 seconds" Click="Interval5_Click" />
+                                <MenuItem Header="10 seconds" Click="Interval10_Click" />
                             </MenuItem>
                             <Separator />
-                            <MenuItem Header="  ↺  Reset Filters"
+                            <MenuItem Header="↺ Reset Filters"
                                       Click="Reset_Click"
-                                      ToolTip="Reset all filters, state toggles, and diff state" />
+                                      ToolTip="Reset filter, sort, and view mode" />
                             <Separator />
                             <MenuItem x:Name="MenuDns"
-                                      Header="  🌐  DNS Resolution"
+                                      Header="🌐 DNS Resolution"
                                       IsCheckable="True"
                                       IsChecked="True"
                                       Click="DnsToggle_Click"
-                                      ToolTip="Enable or disable reverse DNS hostname lookup" />
+                                      ToolTip="Toggle reverse DNS hostname resolution" />
                             <Separator />
-                            <MenuItem Header="  🎨  Colors..."
+                            <MenuItem Header="🎨 Colors..."
                                       Click="Colors_Click"
                                       ToolTip="Customize application colors" />
-                            <MenuItem Header="  ⚙  Prerequisites..."
+                            <MenuItem Header="⚙ Prerequisites..."
                                       Click="Prereqs_Click"
-                                      ToolTip="Check and install missing components" />
+                                      ToolTip="Check prerequisites and install missing components" />
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
