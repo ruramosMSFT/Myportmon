@@ -1,0 +1,86 @@
+<Window x:Class="PortMonitor.Gui.SettingsPanel"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings"
+        Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource BgPrimaryBrush}">
+
+    <StackPanel Margin="0">
+
+        <!-- Refresh Interval -->
+        <TextBlock Text="Refresh Interval"
+                   FontWeight="SemiBold" FontSize="11"
+                   Foreground="{DynamicResource FgMutedBrush}"
+                   Margin="12,10,12,4" />
+        <Border Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1" Padding="8,2">
+            <StackPanel>
+                <RadioButton x:Name="Rb1s"  Content="  1 second"   Margin="4,4" Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12" GroupName="Interval" />
+                <RadioButton x:Name="Rb2s"  Content="  2 seconds"  Margin="4,4" Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12" GroupName="Interval" IsChecked="True" />
+                <RadioButton x:Name="Rb5s"  Content="  5 seconds"  Margin="4,4" Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12" GroupName="Interval" />
+                <RadioButton x:Name="Rb10s" Content="  10 seconds" Margin="4,4" Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12" GroupName="Interval" />
+            </StackPanel>
+        </Border>
+
+        <!-- Separator -->
+        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
+
+        <!-- Options -->
+        <TextBlock Text="Options"
+                   FontWeight="SemiBold" FontSize="11"
+                   Foreground="{DynamicResource FgMutedBrush}"
+                   Margin="12,8,12,4" />
+        <Border Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1" Padding="8,2">
+            <StackPanel>
+                <CheckBox x:Name="ChkDns"
+                          Content="  🌐  DNS Resolution"
+                          IsChecked="True"
+                          Margin="4,5" Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12"
+                          ToolTip="Enable reverse DNS hostname lookup for remote addresses" />
+            </StackPanel>
+        </Border>
+
+        <!-- Separator -->
+        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
+
+        <!-- Actions -->
+        <TextBlock Text="Actions"
+                   FontWeight="SemiBold" FontSize="11"
+                   Foreground="{DynamicResource FgMutedBrush}"
+                   Margin="12,8,12,4" />
+        <Border Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1" Padding="8,4">
+            <StackPanel>
+                <Button Content="  ↺  Reset Filters"
+                        HorizontalContentAlignment="Left"
+                        Margin="2,3" Padding="6,4"
+                        Click="Reset_Click"
+                        ToolTip="Reset all filters, state toggles, and diff state" />
+                <Button Content="  🎨  Colors..."
+                        HorizontalContentAlignment="Left"
+                        Margin="2,3" Padding="6,4"
+                        Click="Colors_Click"
+                        ToolTip="Customize application colors" />
+                <Button Content="  ⚙  Prerequisites..."
+                        HorizontalContentAlignment="Left"
+                        Margin="2,3" Padding="6,4"
+                        Click="Prereqs_Click"
+                        ToolTip="Check and install missing components" />
+            </StackPanel>
+        </Border>
+
+        <!-- Close -->
+        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="12,8,12,10">
+            <Button Content="Close" Padding="16,5" Click="Close_Click" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

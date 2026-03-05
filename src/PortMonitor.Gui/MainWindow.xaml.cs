@@ -61,7 +61,6 @@ public partial class MainWindow : Window
 
             // Restore DNS toggle from persisted settings
             bool dnsOn = AppSettings.Current.GetFlag("DnsEnabled");
-            MenuDns.IsChecked    = dnsOn;
             _poller.DnsEnabled   = dnsOn;
             ColRemoteHost.Visibility = dnsOn ? Visibility.Visible : Visibility.Collapsed;
 
@@ -191,16 +190,54 @@ public partial class MainWindow : Window
         _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
     }
 
-    private void Interval1_Click(object sender, RoutedEventArgs e)  => SetInterval(1);
-    private void Interval2_Click(object sender, RoutedEventArgs e)  => SetInterval(2);
-    private void Interval5_Click(object sender, RoutedEventArgs e)  => SetInterval(5);
-    private void Interval10_Click(object sender, RoutedEventArgs e) => SetInterval(10);
-
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        BtnSettings.ContextMenu.PlacementTarget = BtnSettings;
-        BtnSettings.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        BtnSettings.ContextMenu.IsOpen = true;
+        _timer.Stop();
+
+        var dlg = new SettingsPanel(_intervalSeconds, _poller.DnsEnabled) { Owner = this };
+        dlg.ShowDialog();
+
+        // Apply interval
+        SetInterval(dlg.IntervalSeconds);
+
+        // Apply DNS toggle
+        if (dlg.DnsEnabled != _poller.DnsEnabled)
+        {
+            _poller.DnsEnabled       = dlg.DnsEnabled;
+            ColRemoteHost.Visibility = dlg.DnsEnabled ? Visibility.Visible : Visibility.Collapsed;
+            AppSettings.Current.SetFlag("DnsEnabled", dlg.DnsEnabled);
+            AppSettings.Current.Save();
+        }
+
+        // Handle action buttons
+        if (dlg.DidReset)
+        {
+            FilterBox.Text = string.Empty;
+            _stateFilters.Clear();
+            BtnNew.IsChecked      = false;
+            BtnClosed.IsChecked   = false;
+            BtnListen.IsChecked   = false;
+            BtnEstab.IsChecked    = false;
+            BtnTimeWait.IsChecked = false;
+            BtnUdp.IsChecked      = false;
+            SetInterval(2);
+            _diff.Reset();
+        }
+
+        if (dlg.OpenColors)
+        {
+            var colorDlg = new SettingsWindow { Owner = this };
+            colorDlg.ShowDialog();
+        }
+
+        if (dlg.OpenPrereqs)
+        {
+            var prereqDlg = new PrerequisiteWindow { Owner = this };
+            prereqDlg.ShowDialog();
+        }
+
+        _timer.Start();
+        Refresh();
     }
 
     private void Reset_Click(object sender, RoutedEventArgs e)
@@ -285,19 +322,5 @@ public partial class MainWindow : Window
         var dlg = new SettingsWindow { Owner = this };
         dlg.ShowDialog();
         _timer.Start();
-    }
-
-    private void DnsToggle_Click(object sender, RoutedEventArgs e)
-    {
-        bool enabled = MenuDns.IsChecked;
-        _poller.DnsEnabled       = enabled;
-        ColRemoteHost.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-
-        // Persist
-        AppSettings.Current.SetFlag("DnsEnabled", enabled);
-        AppSettings.Current.Save();
-
-        // Immediate refresh so the column appears/disappears right away
-        Refresh();
     }
 }

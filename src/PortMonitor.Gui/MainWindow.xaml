@@ -32,43 +32,12 @@
                 <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                            Background="{DynamicResource BorderBrush}" Margin="6,0" />
 
-                <!-- Settings dropdown -->
-                <Button x:Name="BtnSettings"
-                        Content="⚙ Settings"
+                <!-- Settings -->
+                <Button Content="⚙ Settings"
                         Margin="2,0"
                         Padding="8,3"
                         Click="Settings_Click"
-                        ToolTip="Application settings">
-                    <Button.ContextMenu>
-                        <ContextMenu x:Name="SettingsMenu">
-                            <!-- Refresh interval -->
-                            <MenuItem Header="Refresh Interval">
-                                <MenuItem Header="1 second"  Click="Interval1_Click" />
-                                <MenuItem Header="2 seconds" Click="Interval2_Click" />
-                                <MenuItem Header="5 seconds" Click="Interval5_Click" />
-                                <MenuItem Header="10 seconds" Click="Interval10_Click" />
-                            </MenuItem>
-                            <Separator />
-                            <MenuItem Header="↺ Reset Filters"
-                                      Click="Reset_Click"
-                                      ToolTip="Reset filter, sort, and view mode" />
-                            <Separator />
-                            <MenuItem x:Name="MenuDns"
-                                      Header="🌐 DNS Resolution"
-                                      IsCheckable="True"
-                                      IsChecked="True"
-                                      Click="DnsToggle_Click"
-                                      ToolTip="Toggle reverse DNS hostname resolution" />
-                            <Separator />
-                            <MenuItem Header="🎨 Colors..."
-                                      Click="Colors_Click"
-                                      ToolTip="Customize application colors" />
-                            <MenuItem Header="⚙ Prerequisites..."
-                                      Click="Prereqs_Click"
-                                      ToolTip="Check prerequisites and install missing components" />
-                        </ContextMenu>
-                    </Button.ContextMenu>
-                </Button>
+                        ToolTip="Application settings" />
 
             </WrapPanel>
         </Border>
