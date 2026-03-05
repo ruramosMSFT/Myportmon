@@ -32,6 +32,8 @@ public class AppSettings
             ["FgPrimaryBrush"]      = "#FFD4D4D4",
             ["FgMutedBrush"]        = "#FF9D9D9D",
             ["GridLineBrush"]        = "#FF2D2D30",
+            ["BgMenuHoverBrush"]    = "#FF3E3E42",
+            ["FgMenuHoverBrush"]    = "#FFFFFFFF",
             // Connection state backgrounds
             ["ColorNew"]            = "#FF1A3A1A",
             ["ColorClosed"]         = "#FF2A2A2A",

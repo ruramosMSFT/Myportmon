@@ -40,13 +40,9 @@
                         Click="Settings_Click"
                         ToolTip="Application settings">
                     <Button.ContextMenu>
-                        <ContextMenu x:Name="SettingsMenu"
-                                     Background="{DynamicResource BgControlBrush}"
-                                     Foreground="{DynamicResource FgPrimaryBrush}"
-                                     BorderBrush="{DynamicResource BorderBrush}">
+                        <ContextMenu x:Name="SettingsMenu">
                             <!-- Refresh interval -->
-                            <MenuItem Header="Refresh Interval"
-                                      Foreground="{DynamicResource FgPrimaryBrush}">
+                            <MenuItem Header="Refresh Interval">
                                 <MenuItem Header="1 second"  Click="Interval1_Click" />
                                 <MenuItem Header="2 seconds" Click="Interval2_Click" />
                                 <MenuItem Header="5 seconds" Click="Interval5_Click" />
@@ -55,7 +51,6 @@
                             <Separator />
                             <MenuItem Header="↺ Reset Filters"
                                       Click="Reset_Click"
-                                      Foreground="{DynamicResource FgPrimaryBrush}"
                                       ToolTip="Reset filter, sort, and view mode" />
                             <Separator />
                             <MenuItem x:Name="MenuDns"
@@ -63,16 +58,13 @@
                                       IsCheckable="True"
                                       IsChecked="True"
                                       Click="DnsToggle_Click"
-                                      Foreground="{DynamicResource FgPrimaryBrush}"
                                       ToolTip="Toggle reverse DNS hostname resolution" />
                             <Separator />
                             <MenuItem Header="🎨 Colors..."
                                       Click="Colors_Click"
-                                      Foreground="{DynamicResource FgPrimaryBrush}"
                                       ToolTip="Customize application colors" />
                             <MenuItem Header="⚙ Prerequisites..."
                                       Click="Prereqs_Click"
-                                      Foreground="{DynamicResource FgPrimaryBrush}"
                                       ToolTip="Check prerequisites and install missing components" />
                         </ContextMenu>
                     </Button.ContextMenu>

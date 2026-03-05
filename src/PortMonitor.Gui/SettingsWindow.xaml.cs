@@ -27,6 +27,8 @@ public partial class SettingsWindow : Window
         ("Primary Text",       "FgPrimaryBrush"),
         ("Muted Text",         "FgMutedBrush"),
         ("Grid Lines",         "GridLineBrush"),
+        ("Menu Hover",         "BgMenuHoverBrush"),
+        ("Menu Hover Text",   "FgMenuHoverBrush"),
     ];
 
     private static readonly (string Label, string Key)[] StateColorEntries =

@@ -14,6 +14,8 @@
         <SolidColorBrush x:Key="FgPrimaryBrush"      Color="#FFD4D4D4" />
         <SolidColorBrush x:Key="FgMutedBrush"        Color="#FF9D9D9D" />
         <SolidColorBrush x:Key="GridLineBrush"        Color="#FF2D2D30" />
+        <SolidColorBrush x:Key="BgMenuHoverBrush"    Color="#FF3E3E42" />
+        <SolidColorBrush x:Key="FgMenuHoverBrush"    Color="#FFFFFFFF" />
 
         <!-- ── State colors ─────────────────────────────────────────────── -->
         <SolidColorBrush x:Key="ColorNew"         Color="#FF1A3A1A" />
@@ -322,6 +324,38 @@
             <Setter Property="Foreground" Value="{DynamicResource FgMutedBrush}" />
             <Setter Property="FontFamily" Value="Consolas" />
             <Setter Property="FontSize"   Value="11" />
+        </Style>
+
+        <!-- ── ContextMenu / MenuItem ────────────────────────────────────── -->
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background"      Value="{DynamicResource BgControlBrush}" />
+            <Setter Property="Foreground"      Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily"      Value="Consolas" />
+            <Setter Property="FontSize"        Value="12" />
+        </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Background"  Value="{DynamicResource BgControlBrush}" />
+            <Setter Property="Foreground"  Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="FontFamily"  Value="Consolas" />
+            <Setter Property="FontSize"    Value="12" />
+            <Setter Property="Padding"     Value="6,4" />
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource BgMenuHoverBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgMenuHoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource FgPrimaryBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Separator">
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="Margin"     Value="4,2" />
         </Style>
 
     </Application.Resources>
