@@ -1,0 +1,35 @@
+# Build outputs
+bin/
+obj/
+publish/
+out/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+*.userprefs
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nuget.props
+*.nuget.targets
+nuget.config
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Log files
+*.log
