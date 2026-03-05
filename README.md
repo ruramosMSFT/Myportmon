@@ -55,6 +55,7 @@ portmonitor.exe [options]
 |------|---------|-------------|
 | `--interval <n>` | `2` | Refresh interval in seconds (min: 1) |
 | `--log <path>` | _(none)_ | Append new/closed events to a log file |
+| `--check` | | Run interactive prerequisite check, install missing components via winget, then exit |
 | `--help` / `-h` | | Print usage and exit |
 
 ## Keyboard Shortcuts
@@ -80,7 +81,8 @@ src/
 │   ├── Services/
 │   │   ├── IpHelper.cs             P/Invoke → iphlpapi.dll (PID resolution)
 │   │   ├── ConnectionPoller.cs     Data collection loop
-│   │   └── DiffEngine.cs           New/closed delta detection
+│   │   ├── DiffEngine.cs           New/closed delta detection
+│   │   └── PrerequisiteChecker.cs  OS/runtime/winget checks + auto-install
 │   └── UI/
 │       ├── AppState.cs             Interactive UI state (filter, sort, page)
 │       └── ConsoleRenderer.cs      Terminal drawing logic

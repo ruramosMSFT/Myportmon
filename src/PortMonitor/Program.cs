@@ -1,16 +1,22 @@
 using PortMonitor.Services;
 using PortMonitor.UI;
-using System.Security.Principal;
 
-// ── --help ──────────────────────────────────────────────────────────────────
+// ── --help ───────────────────────────────────────────────────────────────────
 if (args.Contains("--help") || args.Contains("-h"))
 {
     PrintHelp();
     return 0;
 }
 
-// ── Parse CLI arguments ──────────────────────────────────────────────────────
-int interval  = 2;
+// ── --check  (interactive prerequisite check, then exit) ─────────────────────
+if (args.Contains("--check"))
+{
+    PrerequisiteChecker.RunInteractive();
+    return 0;
+}
+
+// ── Parse CLI arguments ───────────────────────────────────────────────────────
+int interval    = 2;
 string? logPath = null;
 
 for (int i = 0; i < args.Length; i++)
@@ -21,18 +27,29 @@ for (int i = 0; i < args.Length; i++)
         logPath = args[i + 1];
 }
 
-// ── Admin elevation check ────────────────────────────────────────────────────
-bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent())
-    .IsInRole(WindowsBuiltInRole.Administrator);
-
-if (!isAdmin)
+// ── Startup silent prerequisite check ────────────────────────────────────────
+var issues = PrerequisiteChecker.SilentCheck();
+if (issues.Count > 0)
 {
-    Console.ForegroundColor = ConsoleColor.Yellow;
-    Console.WriteLine("WARNING: Not running as Administrator.");
-    Console.WriteLine("         Some process names will appear as [N/A].");
-    Console.ResetColor();
-    Console.WriteLine();
-    Console.WriteLine("Press any key to continue (or run as Administrator for full info)...");
+    foreach (var issue in issues)
+    {
+        bool isSoft = issue.Name == "Administrator";
+        Console.ForegroundColor = isSoft ? ConsoleColor.Yellow : ConsoleColor.Red;
+        Console.WriteLine($"  [{(isSoft ? "!" : "✗")}] {issue.Name}: {issue.Message}");
+        Console.ResetColor();
+    }
+
+    bool hasHard = issues.Any(i => i.Name != "Administrator");
+    if (hasHard)
+    {
+        Console.WriteLine();
+        Console.WriteLine("  Run  portmonitor --check  to install missing components.");
+        Console.WriteLine("  Press any key to continue anyway, or Ctrl+C to exit...");
+    }
+    else
+    {
+        Console.WriteLine("  Press any key to continue...");
+    }
     Console.ReadKey(true);
 }
 
@@ -182,11 +199,13 @@ static void PrintHelp()
     Console.WriteLine("PortMonitor v1.0 — Real-time interactive Windows port monitor");
     Console.WriteLine();
     Console.WriteLine("Usage:");
-    Console.WriteLine("  portmonitor [--interval <seconds>] [--log <path>] [--help]");
+    Console.WriteLine("  portmonitor [--interval <seconds>] [--log <path>] [--check] [--help]");
     Console.WriteLine();
     Console.WriteLine("Options:");
     Console.WriteLine("  --interval <n>   Refresh interval in seconds (default: 2, min: 1)");
     Console.WriteLine("  --log <path>     Append new/closed events to the specified log file");
+    Console.WriteLine("  --check          Run interactive prerequisite check (installs missing");
+    Console.WriteLine("                   components via winget with your permission), then exit");
     Console.WriteLine("  --help, -h       Show this help message and exit");
     Console.WriteLine();
     Console.WriteLine("Keyboard shortcuts (while running):");
