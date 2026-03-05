@@ -26,7 +26,11 @@ public class DiffEngine
     /// </returns>
     public IReadOnlyList<ConnectionEntry> Apply(IReadOnlyList<ConnectionEntry> current)
     {
-        var currentMap = current.ToDictionary(e => e.Key);
+        // Build a dedup-safe dictionary — in case the OS returns duplicates
+        // that were not caught earlier (e.g. UDP|0.0.0.0|3702|*|0).
+        var currentMap = new Dictionary<string, ConnectionEntry>(current.Count);
+        foreach (var e in current)
+            currentMap.TryAdd(e.Key, e);   // silently skip any exact-duplicate key
         var result     = new List<ConnectionEntry>(current.Count + 8);
 
         // ── Add live entries, marking brand-new ones ──────────────────────────

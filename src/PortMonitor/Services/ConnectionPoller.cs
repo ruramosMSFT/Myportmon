@@ -19,12 +19,15 @@ public class ConnectionPoller
     {
         RefreshProcessCacheIfNeeded();
 
+        // Use a dict keyed on the connection key to naturally deduplicate
+        // entries the OS may report more than once (common with UDP sockets).
+        var seen    = new HashSet<string>();
         var entries = new List<ConnectionEntry>();
 
         // TCP ----------------------------------------------------------------
         foreach (var tcp in IpHelper.GetTcpConnections())
         {
-            entries.Add(new ConnectionEntry
+            var entry = new ConnectionEntry
             {
                 Protocol      = "TCP",
                 LocalAddress  = tcp.LocalAddr,
@@ -34,13 +37,15 @@ public class ConnectionPoller
                 State         = IpHelper.MapTcpState(tcp.State),
                 Pid           = tcp.Pid,
                 ProcessName   = ResolveProcessName(tcp.Pid)
-            });
+            };
+            if (seen.Add(entry.Key))
+                entries.Add(entry);
         }
 
         // UDP ----------------------------------------------------------------
         foreach (var udp in IpHelper.GetUdpListeners())
         {
-            entries.Add(new ConnectionEntry
+            var entry = new ConnectionEntry
             {
                 Protocol      = "UDP",
                 LocalAddress  = udp.LocalAddr,
@@ -50,7 +55,9 @@ public class ConnectionPoller
                 State         = ConnectionState.Udp,
                 Pid           = udp.Pid,
                 ProcessName   = ResolveProcessName(udp.Pid)
-            });
+            };
+            if (seen.Add(entry.Key))
+                entries.Add(entry);
         }
 
         return entries;
