@@ -182,8 +182,6 @@ public partial class MainWindow : Window
         Refresh();
     }
 
-    private void IntervalCombo_Changed(object sender, SelectionChangedEventArgs e) { }
-
     private void SetInterval(int seconds)
     {
         _intervalSeconds = seconds;
