@@ -23,9 +23,10 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<ConnectionViewModel> _rows = [];
 
     // ── Filter / view / sort state ────────────────────────────────────────────
-    private string    _filter   = string.Empty;
-    private ViewMode  _viewMode = ViewMode.All;
-    private SortMode  _sort     = SortMode.Port;
+    private string    _filter      = string.Empty;
+    private ViewMode  _viewMode    = ViewMode.All;
+    private SortMode  _sort        = SortMode.Port;
+    private bool      _initialized;
 
     private enum ViewMode { All, ListenOnly, EstablishedOnly }
     private enum SortMode { Port, Pid, State, Process }
@@ -50,6 +51,7 @@ public partial class MainWindow : Window
             // Timer setup — start refresh after window is visible
             _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
             _timer.Tick    += OnTimerTick;
+            _initialized    = true;   // guard: allow Refresh() to run
 
             Loaded += (_, _) =>
             {
@@ -70,6 +72,8 @@ public partial class MainWindow : Window
 
     private void Refresh()
     {
+        if (!_initialized) return;   // called before InitializeComponent() finishes
+
         IReadOnlyList<ConnectionEntry> polled;
         IReadOnlyList<ConnectionEntry> merged;
 
