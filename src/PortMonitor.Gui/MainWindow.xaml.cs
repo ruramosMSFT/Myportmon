@@ -219,4 +219,12 @@ public partial class MainWindow : Window
         dlg.ShowDialog();
         _timer.Start();
     }
+
+    private void Colors_Click(object sender, RoutedEventArgs e)
+    {
+        _timer.Stop();
+        var dlg = new SettingsWindow { Owner = this };
+        dlg.ShowDialog();
+        _timer.Start();
+    }
 }

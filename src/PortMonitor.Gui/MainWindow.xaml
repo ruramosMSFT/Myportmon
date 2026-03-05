@@ -96,6 +96,11 @@
                         Click="Prereqs_Click"
                         ToolTip="Check prerequisites and install missing components" />
 
+                <Button Content="🎨 Colors"
+                        Margin="2,0"
+                        Click="Colors_Click"
+                        ToolTip="Customize application colors" />
+
             </WrapPanel>
         </Border>
 

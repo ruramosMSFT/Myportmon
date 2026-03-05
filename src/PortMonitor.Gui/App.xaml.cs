@@ -28,5 +28,8 @@ public partial class App : Application
         };
 
         base.OnStartup(e);
+
+        // Load persisted color settings (overrides XAML defaults)
+        AppSettings.LoadAndApply();
     }
 }
