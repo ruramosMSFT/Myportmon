@@ -390,9 +390,10 @@ Top-level statements. Key flow:
 App.xaml / App.xaml.cs        ← application startup, global exception handlers,
                                   loads AppSettings on startup
 GlobalUsings.cs                ← resolves WinForms vs WPF type ambiguities
-AppSettings.cs                 ← persistent color settings (JSON)
+AppSettings.cs                 ← persistent colors + flags (JSON)
 MainWindow.xaml / .cs          ← main window
 ViewModels/ConnectionViewModel ← wraps ConnectionEntry for DataGrid binding
+SettingsPanel.xaml / .cs       ← settings dialog (interval, DNS, actions)
 SettingsWindow.xaml / .cs      ← color customization dialog
 PrerequisiteWindow.xaml / .cs  ← prerequisite checker dialog
 ```
@@ -538,7 +539,8 @@ DockPanel
 │       └── BtnUdp     ToggleButton (■ UDP,          Tag="Udp")
 └── DataGrid (ConnectionGrid)              ← Main data grid
     └── Columns: Tag, Proto, Local Address, L.Port,
-                 Remote Address, R.Port, State, PID, Process
+                 Remote Address, R.Port, State, PID, Process,
+                 Remote Host (ColRemoteHost, toggleable)
 ```
 
 Each state filter button uses `Style="{StaticResource StateFilterButton}"` with `Background="{DynamicResource ColorXxx}"` and `Foreground="{DynamicResource FgXxx}"`. All six share one `Click="StateFilter_Click"` handler; the `Tag` property identifies which state.
@@ -577,7 +579,23 @@ private bool             _initialized;
 
 **`FetchPublicIpAsync()`**: Called once on `Loaded`. Hits `https://api.ipify.org` via `HttpClient` (10 s timeout). Sets `StatusPublicIp.Text` to the IP string or `"unavailable"` on failure.
 
-**Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `IntervalCombo_Changed`, `Reset_Click` (clears all filters + toggles + resets diff), `Prereqs_Click` (stops timer, shows dialog, restarts timer), `Colors_Click` (same pattern).
+**Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `Settings_Click` (opens SettingsPanel dialog, applies interval/DNS/reset/colors/prereqs on close), `Reset_Click`, `Prereqs_Click`, `Colors_Click`.
+
+### `SettingsPanel.xaml / .cs`
+
+Settings dialog window with three sections:
+
+**Refresh Interval** — radio buttons: 1s / 2s / 5s / 10s (restored from current value).
+
+**Options** — checkboxes:
+- 🌐 DNS Resolution — toggles `ConnectionPoller.DnsEnabled` and `ColRemoteHost` column visibility. Persisted to `AppSettings` flags.
+
+**Actions** — buttons:
+- ↺ Reset Filters — sets `DidReset = true`, closes dialog
+- 🎨 Colors... — sets `OpenColors = true`, closes dialog
+- ⚙ Prerequisites... — sets `OpenPrereqs = true`, closes dialog
+
+All results read by MainWindow after `ShowDialog()` returns.
 
 ### `ViewModels/ConnectionViewModel.cs`
 
@@ -593,6 +611,7 @@ public sealed class ConnectionViewModel
     public string StateDisplay     { get; }
     public string Pid              { get; }  // "-" when Pid == 0
     public string ProcessName      { get; }
+    public string RemoteHost       { get; }  // reverse DNS FQDN
     public bool   IsNew            { get; }  // used by DataTrigger
     public bool   IsClosed         { get; }  // used by DataTrigger
 }
@@ -670,3 +689,6 @@ dotnet publish src/PortMonitor.Cli/PortMonitor.Cli.csproj `
 | WinForms + WPF type conflicts (`Color`, `MessageBox`, `TextBox`, etc.) | `GlobalUsings.cs` with explicit `global using` aliases |
 | `PortMonitorGui.exe` locked during publish | Stop the process first: `Stop-Process -Name PortMonitorGui -ErrorAction SilentlyContinue` |
 | App icon crashes single-file EXE | `Icon="app.ico"` resolves from filesystem; use `Icon="pack://application:,,,/app.ico"` + `<Resource Include="app.ico" />` in csproj to load from embedded resource |
+| Synchronous DNS blocks UI and leaks ~1 GB | Use async `Dns.GetHostEntryAsync()` fire-and-forget with `ConcurrentDictionary` cache (bounded at 4096). Results appear next poll cycle |
+| `ConnectionEntry.Key` allocates string on every access | Cache as a field via `ComputeKey()` called once after init-property assignment |
+| `Process.GetProcesses()` leaks native handles | Dispose each `Process` in `finally` block; use `using var proc` for `GetProcessById` |

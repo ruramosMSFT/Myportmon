@@ -2,20 +2,31 @@
 
 Real-time interactive Windows port monitor — a modern CLI alternative to Sysinternals Portmon / TCPView.
 
+## Download
+
+**[PortMonitorGui.exe v1.2.0](https://github.com/ruramosMSFT/Myportmon/releases/tag/v1.2.0)** — self-contained Windows x64 executable (~155 MB). No .NET install required. Double-click to run.
+
+> Run as Administrator for full PID→process name resolution.
+
 ## Features
 
-- Polls all active **TCP + UDP connections** every N seconds (configurable)
-- Columns: `Protocol | Local Address | Local Port | Remote Address | Remote Port | State | PID | Process Name`
+- Polls all active **TCP + UDP connections** every N seconds (configurable 1/2/5/10s)
+- Columns: `Tag | Proto | Local Address | L.Port | Remote Address | R.Port | State | PID | Process | Remote Host`
+- **Remote Host** — async reverse DNS lookup (FQDN) with persistent cache, toggleable via Settings
 - **Color-coded by state**: LISTEN (yellow), ESTABLISHED (green), TIME_WAIT/CLOSE_WAIT (red), UDP (cyan)
-- **Delta detection**: marks `[NEW]` connections and `[CLS]` connections that disappeared (fade-out after 2 cycles)
-- **Interactive filtering** by IP, port, process name, or state
-- **No flicker** — uses cursor repositioning, not `cls`
-- Optional file logging of new/closed events
+- **Delta detection**: marks `[NEW]` connections and `[CLS]` closed connections (fade-out after 2 cycles)
+- **State filter buttons**: clickable toggles for NEW, CLOSED, LISTEN, ESTABLISHED, TIME_WAIT, UDP
+- **Interactive text filtering** by IP, port, process name, hostname, or state
+- **Settings dialog** — refresh interval, DNS toggle, colors, prerequisites
+- **Customizable dark theme** — 24 color keys, JSON-persisted to `%AppData%\PortMonitor\settings.json`
+- **Status bar**: connection count, last refresh, admin status, CPU%, memory, public IP
+- **Door-themed app icon** (multi-size ICO: 256/48/32/16px)
+- Optional file logging of new/closed events (CLI)
 
 ## Requirements
 
 - Windows 10/11
-- .NET 8 SDK or runtime
+- .NET 8 SDK (for building) or self-contained EXE (no runtime needed)
 - Run as Administrator for full PID→process name resolution
 
 ## Build
@@ -28,10 +39,10 @@ dotnet build PortMonitor.slnx
 
 ### GUI app (WPF — no console window)
 
-**Self-contained** (~70 MB, no .NET install required):
+**Self-contained** (~155 MB, no .NET install required):
 
 ```bash
-dotnet publish src/PortMonitor.Gui -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish-gui
+dotnet publish src/PortMonitor.Gui -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish-gui
 ```
 
 Output: `publish-gui\PortMonitorGui.exe` — double-click to run.
@@ -45,12 +56,6 @@ dotnet publish src/PortMonitor.Cli -c Release -r win-x64 --self-contained true -
 ```
 
 Output: `publish-cli\PortMonitorCli.exe` — run from a console/PowerShell window.
-
-**Framework-dependent** (requires .NET 8, much smaller):
-
-```bash
-dotnet publish src/PortMonitor.Cli -c Release -r win-x64 -o publish-cli
-```
 
 ## Run
 
@@ -66,16 +71,16 @@ PortMonitorGui.exe          # GUI app
 PortMonitorCli.exe [opts]   # terminal app
 ```
 
-### Options
+### CLI Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--interval <n>` | `2` | Refresh interval in seconds (min: 1) |
+| `--interval <n>` | `2` | Refresh interval in seconds (1–300) |
 | `--log <path>` | _(none)_ | Append new/closed events to a log file |
 | `--check` | | Run interactive prerequisite check, install missing components via winget, then exit |
 | `--help` / `-h` | | Print usage and exit |
 
-## Keyboard Shortcuts
+### CLI Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
@@ -96,7 +101,7 @@ src/
 │   │   └── ConnectionEntry.cs         Data model per connection
 │   ├── Services/
 │   │   ├── IpHelper.cs                P/Invoke → iphlpapi.dll (PID resolution)
-│   │   ├── ConnectionPoller.cs        Data collection loop
+│   │   ├── ConnectionPoller.cs        Polling + process/DNS resolution
 │   │   ├── DiffEngine.cs              New/closed delta detection
 │   │   └── PrerequisiteChecker.cs     OS/runtime/winget checks + auto-install
 │   └── UI/
@@ -105,16 +110,28 @@ src/
 ├── PortMonitor.Cli/                   Terminal app (console window)
 │   └── Program.cs                     Entry point, CLI args, main loop, key input
 ├── PortMonitor.Gui/                   WPF GUI app (no console window)
-│   ├── App.xaml / App.xaml.cs         Dark theme resources
+│   ├── App.xaml / App.xaml.cs         Dark theme resources + global styles
 │   ├── MainWindow.xaml/.cs            Main window with DataGrid + toolbar
+│   ├── SettingsPanel.xaml/.cs         Settings dialog (interval, DNS, actions)
+│   ├── SettingsWindow.xaml/.cs        Color customization dialog
 │   ├── PrerequisiteWindow.xaml/.cs    Prerequisite check dialog
+│   ├── AppSettings.cs                 Persistent colors + flags (JSON)
+│   ├── GlobalUsings.cs                WinForms/WPF type aliases
+│   ├── app.ico                        Door-themed multi-size icon
 │   └── ViewModels/
 │       └── ConnectionViewModel.cs     WPF data-binding model
 └── PortMonitor.Tests/
     └── DiffEngineTests.cs             Unit tests for DiffEngine (9 tests)
 ```
 
+## Repositories
+
+- **Public**: https://github.com/ruramosMSFT/Myportmon
+- **Enterprise**: https://github.com/ruramos_microsoft/Myportmon
+
 ## Notes
 
 - PID resolution uses `GetExtendedTcpTable` / `GetExtendedUdpTable` via P/Invoke to `iphlpapi.dll` — the same approach used by TCPView — because .NET's `IPGlobalProperties` does not expose PIDs natively.
 - Process names that cannot be resolved (Access Denied) appear as `[N/A]`.
+- DNS resolution is async (non-blocking) with a bounded cache (4096 entries). Results appear on the next poll cycle.
+- The `ConnectionEntry.Key` is computed once and cached to avoid repeated string allocations.
