@@ -60,9 +60,6 @@
                                       Click="DnsToggle_Click"
                                       ToolTip="Toggle reverse DNS hostname resolution" />
                             <Separator />
-                            <MenuItem Header="🎨 Colors..."
-                                      Click="Colors_Click"
-                                      ToolTip="Customize application colors" />
                             <MenuItem Header="⚙ Prerequisites..."
                                       Click="Prereqs_Click"
                                       ToolTip="Check prerequisites and install missing components" />
