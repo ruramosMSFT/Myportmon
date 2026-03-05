@@ -28,19 +28,6 @@
                         ToolTip="Clear filter"
                         Click="ClearFilter_Click" />
 
-                <!-- Sort -->
-                <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,0" />
-                <ComboBox x:Name="SortCombo"
-                          Width="110"
-                          VerticalAlignment="Center"
-                          SelectionChanged="SortCombo_Changed"
-                          ToolTip="Sort the connection list">
-                    <ComboBoxItem Content="L.Port"   IsSelected="True" />
-                    <ComboBoxItem Content="PID" />
-                    <ComboBoxItem Content="State" />
-                    <ComboBoxItem Content="Process" />
-                </ComboBox>
-
                 <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                            Background="{DynamicResource BorderBrush}" Margin="6,0" />
 

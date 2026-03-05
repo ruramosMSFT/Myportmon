@@ -26,10 +26,7 @@ public partial class MainWindow : Window
     // ── Filter / sort state ───────────────────────────────────────────────────
     private string           _filter       = string.Empty;
     private readonly HashSet<string> _stateFilters = [];
-    private SortMode         _sort         = SortMode.Port;
     private bool             _initialized;
-
-    private enum SortMode { Port, Pid, State, Process }
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public MainWindow()
@@ -117,18 +114,9 @@ public partial class MainWindow : Window
                 e.Pid.ToString().Contains(_filter));
         }
 
-        // Apply sort
-        var sorted = _sort switch
-        {
-            SortMode.Pid     => filtered.OrderBy(e => e.Pid),
-            SortMode.State   => filtered.OrderBy(e => e.StateDisplay),
-            SortMode.Process => filtered.OrderBy(e => e.ProcessName),
-            _                => filtered.OrderBy(e => e.LocalPort)
-        };
-
         // Rebuild collection — efficient for typical sizes (<500 rows)
         _rows.Clear();
-        foreach (var entry in sorted)
+        foreach (var entry in filtered.OrderBy(e => e.LocalPort))
             _rows.Add(new ConnectionViewModel(entry));
 
         // Status bar
@@ -161,19 +149,6 @@ public partial class MainWindow : Window
         Refresh();
     }
 
-    private void SortCombo_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        _sort = (SortCombo.SelectedIndex) switch
-        {
-            0 => SortMode.Port,
-            1 => SortMode.Pid,
-            2 => SortMode.State,
-            3 => SortMode.Process,
-            _ => SortMode.Port
-        };
-        Refresh();
-    }
-
     private void IntervalCombo_Changed(object sender, SelectionChangedEventArgs e)
     {
         _intervalSeconds = IntervalCombo.SelectedIndex switch
@@ -197,8 +172,6 @@ public partial class MainWindow : Window
         BtnEstab.IsChecked          = false;
         BtnTimeWait.IsChecked       = false;
         BtnUdp.IsChecked            = false;
-        _sort                       = SortMode.Port;
-        SortCombo.SelectedIndex     = 0;
         IntervalCombo.SelectedIndex = 1;
         _diff.Reset();
         Refresh();
