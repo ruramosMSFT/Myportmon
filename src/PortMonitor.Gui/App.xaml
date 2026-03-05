@@ -32,18 +32,18 @@
 
         <!-- ── Global text ───────────────────────────────────────────────── -->
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource FgPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FgPrimaryBrush}" />
             <Setter Property="FontFamily" Value="Consolas" />
             <Setter Property="FontSize"   Value="12" />
         </Style>
 
         <!-- ── TextBox ───────────────────────────────────────────────────── -->
         <Style TargetType="TextBox">
-            <Setter Property="Background"       Value="{StaticResource BgControlBrush}" />
-            <Setter Property="Foreground"       Value="{StaticResource FgPrimaryBrush}" />
-            <Setter Property="BorderBrush"      Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background"       Value="{DynamicResource BgControlBrush}" />
+            <Setter Property="Foreground"       Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="BorderBrush"      Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness"  Value="1" />
-            <Setter Property="CaretBrush"       Value="{StaticResource FgPrimaryBrush}" />
+            <Setter Property="CaretBrush"       Value="{DynamicResource FgPrimaryBrush}" />
             <Setter Property="FontFamily"       Value="Consolas" />
             <Setter Property="FontSize"         Value="12" />
             <Setter Property="Padding"          Value="4,2" />
@@ -147,9 +147,9 @@
 
         <!-- ── Button ────────────────────────────────────────────────────── -->
         <Style TargetType="Button">
-            <Setter Property="Background"      Value="{StaticResource BgControlBrush}" />
-            <Setter Property="Foreground"      Value="{StaticResource FgPrimaryBrush}" />
-            <Setter Property="BorderBrush"     Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background"      Value="{DynamicResource BgControlBrush}" />
+            <Setter Property="Foreground"      Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding"         Value="8,3" />
             <Setter Property="FontFamily"      Value="Consolas" />
@@ -157,19 +157,19 @@
             <Setter Property="Cursor"          Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgControlHoverBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource BgControlHoverBrush}" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgAccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource BgAccentBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <!-- ── ToggleButton ──────────────────────────────────────────────── -->
         <Style TargetType="ToggleButton">
-            <Setter Property="Background"      Value="{StaticResource BgControlBrush}" />
-            <Setter Property="Foreground"      Value="{StaticResource FgPrimaryBrush}" />
-            <Setter Property="BorderBrush"     Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background"      Value="{DynamicResource BgControlBrush}" />
+            <Setter Property="Foreground"      Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding"         Value="8,3" />
             <Setter Property="FontFamily"      Value="Consolas" />
@@ -177,25 +177,25 @@
             <Setter Property="Cursor"          Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgAccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource BgAccentBrush}" />
                     <Setter Property="Foreground" Value="White" />
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgControlHoverBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource BgControlHoverBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <!-- ── DataGrid ──────────────────────────────────────────────────── -->
         <Style TargetType="DataGrid">
-            <Setter Property="Background"            Value="{StaticResource BgPrimaryBrush}" />
-            <Setter Property="Foreground"            Value="{StaticResource FgPrimaryBrush}" />
-            <Setter Property="BorderBrush"           Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background"            Value="{DynamicResource BgPrimaryBrush}" />
+            <Setter Property="Foreground"            Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="BorderBrush"           Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness"       Value="0" />
             <Setter Property="GridLinesVisibility"   Value="Horizontal" />
             <Setter Property="HorizontalGridLinesBrush" Value="#FF2D2D30" />
-            <Setter Property="RowBackground"         Value="{StaticResource BgPrimaryBrush}" />
-            <Setter Property="AlternatingRowBackground" Value="{StaticResource BgSecondaryBrush}" />
+            <Setter Property="RowBackground"         Value="{DynamicResource BgPrimaryBrush}" />
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource BgSecondaryBrush}" />
             <Setter Property="FontFamily"            Value="Consolas" />
             <Setter Property="FontSize"              Value="12" />
             <Setter Property="SelectionMode"         Value="Single" />
@@ -209,9 +209,9 @@
 
         <!-- DataGrid column header dark style -->
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"      Value="{StaticResource BgSecondaryBrush}" />
-            <Setter Property="Foreground"      Value="{StaticResource FgPrimaryBrush}" />
-            <Setter Property="BorderBrush"     Value="{StaticResource BorderBrush}" />
+            <Setter Property="Background"      Value="{DynamicResource BgSecondaryBrush}" />
+            <Setter Property="Foreground"      Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="0,0,1,1" />
             <Setter Property="Padding"         Value="6,4" />
             <Setter Property="FontFamily"      Value="Consolas" />
@@ -221,36 +221,36 @@
 
         <!-- DataGrid row style — color driven by view model properties -->
         <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="{StaticResource BgPrimaryBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FgPrimaryBrush}" />
+            <Setter Property="Background" Value="{DynamicResource BgPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FgPrimaryBrush}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsClosed}" Value="True">
-                    <Setter Property="Background" Value="{StaticResource ColorClosed}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgClosed}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorClosed}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgClosed}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateDisplay}" Value="LISTEN">
-                    <Setter Property="Background" Value="{StaticResource ColorListen}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgListen}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorListen}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgListen}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateDisplay}" Value="ESTABLISHED">
-                    <Setter Property="Background" Value="{StaticResource ColorEstablished}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgEstablished}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorEstablished}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgEstablished}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateDisplay}" Value="TIME_WAIT">
-                    <Setter Property="Background" Value="{StaticResource ColorTimeWait}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgTimeWait}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorTimeWait}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgTimeWait}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateDisplay}" Value="CLOSE_WAIT">
-                    <Setter Property="Background" Value="{StaticResource ColorTimeWait}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgTimeWait}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorTimeWait}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgTimeWait}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding StateDisplay}" Value="UDP">
-                    <Setter Property="Background" Value="{StaticResource ColorUdp}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgUdp}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorUdp}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgUdp}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsNew}" Value="True">
-                    <Setter Property="Background" Value="{StaticResource ColorNew}" />
-                    <Setter Property="Foreground" Value="{StaticResource FgNew}" />
+                    <Setter Property="Background" Value="{DynamicResource ColorNew}" />
+                    <Setter Property="Foreground" Value="{DynamicResource FgNew}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -260,7 +260,7 @@
             <Setter Property="Padding"         Value="2,0" />
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgAccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource BgAccentBrush}" />
                     <Setter Property="Foreground" Value="White" />
                 </Trigger>
             </Style.Triggers>
@@ -268,11 +268,11 @@
 
         <!-- ── StatusBar ─────────────────────────────────────────────────── -->
         <Style TargetType="StatusBar">
-            <Setter Property="Background" Value="{StaticResource BgSecondaryBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource FgMutedBrush}" />
+            <Setter Property="Background" Value="{DynamicResource BgSecondaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FgMutedBrush}" />
         </Style>
         <Style TargetType="StatusBarItem">
-            <Setter Property="Foreground" Value="{StaticResource FgMutedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FgMutedBrush}" />
             <Setter Property="FontFamily" Value="Consolas" />
             <Setter Property="FontSize"   Value="11" />
         </Style>

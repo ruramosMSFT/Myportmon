@@ -125,10 +125,9 @@ public class AppSettings
         try
         {
             var color = (Color)ColorConverter.ConvertFromString(hex);
-            if (Application.Current.Resources[key] is SolidColorBrush brush)
-                brush.Color = color;
-            else
-                Application.Current.Resources[key] = new SolidColorBrush(color);
+            // Always replace (not mutate) — frozen brushes can't be mutated,
+            // and DynamicResource picks up the replacement automatically.
+            Application.Current.Resources[key] = new SolidColorBrush(color);
         }
         catch { }
     }
