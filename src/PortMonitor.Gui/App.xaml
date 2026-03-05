@@ -51,36 +51,53 @@
 
         <!-- ── ComboBox ──────────────────────────────────────────────────── -->
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Background"  Value="#FFD8D8D8" />
-            <Setter Property="Foreground"  Value="#FF111111" />
-            <Setter Property="FontWeight"  Value="Bold" />
             <Setter Property="FontFamily"  Value="Consolas" />
             <Setter Property="FontSize"    Value="12" />
+            <Setter Property="FontWeight"  Value="Bold" />
+            <Setter Property="Foreground"  Value="#FF111111" />
+            <Setter Property="Background"  Value="#FFD8D8D8" />
             <Setter Property="Padding"     Value="6,3" />
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FFAAAAAA" />
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#FF999999" />
-                    <Setter Property="Foreground" Value="#FF111111" />
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter
+                                TextElement.Foreground="#FF111111"
+                                TextElement.FontWeight="Bold"
+                                TextElement.FontFamily="Consolas"
+                                TextElement.FontSize="12" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FFAAAAAA" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FF999999" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="FontFamily"  Value="Consolas" />
-            <Setter Property="FontSize"    Value="12" />
-            <Setter Property="FontWeight"  Value="Bold" />
-            <Setter Property="Foreground"  Value="#FF111111" />
-            <Setter Property="Background"  Value="#FFB8B8B8" />
-            <Setter Property="BorderBrush" Value="#FF888888" />
+            <Setter Property="FontFamily"      Value="Consolas" />
+            <Setter Property="FontSize"        Value="12" />
+            <Setter Property="FontWeight"      Value="Bold" />
+            <Setter Property="Foreground"      Value="#FF111111" />
+            <Setter Property="Background"      Value="#FFB8B8B8" />
+            <Setter Property="BorderBrush"     Value="#FF888888" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding"     Value="4,2" />
+            <Setter Property="Padding"         Value="4,2" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
-                        <Grid>
+                        <Grid TextElement.Foreground="#FF111111"
+                              TextElement.FontWeight="Bold"
+                              TextElement.FontFamily="Consolas"
+                              TextElement.FontSize="12">
                             <!-- Header / toggle button -->
                             <ToggleButton Focusable="False" ClickMode="Press"
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
@@ -106,7 +123,11 @@
                             <ContentPresenter Margin="6,2,22,2" IsHitTestVisible="False"
                                               VerticalAlignment="Center" HorizontalAlignment="Left"
                                               Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              TextElement.Foreground="#FF111111"
+                                              TextElement.FontWeight="Bold"
+                                              TextElement.FontFamily="Consolas"
+                                              TextElement.FontSize="12" />
                             <!-- Dropdown popup -->
                             <Popup x:Name="Popup" Placement="Bottom" Focusable="False"
                                    IsOpen="{TemplateBinding IsDropDownOpen}"
