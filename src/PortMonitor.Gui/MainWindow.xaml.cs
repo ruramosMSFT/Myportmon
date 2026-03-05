@@ -129,10 +129,22 @@ public partial class MainWindow : Window
                 e.RemoteHost.Contains(_filter,    StringComparison.OrdinalIgnoreCase));
         }
 
-        // Rebuild collection — efficient for typical sizes (<500 rows)
-        _rows.Clear();
-        foreach (var entry in filtered.OrderBy(e => e.LocalPort))
-            _rows.Add(new ConnectionViewModel(entry));
+        // Build filtered+sorted list
+        var sorted = filtered.OrderBy(e => e.LocalPort).ToList();
+
+        // In-place update: reuse existing ViewModels where possible to reduce GC pressure
+        int i = 0;
+        for (; i < sorted.Count; i++)
+        {
+            var vm = new ConnectionViewModel(sorted[i]);
+            if (i < _rows.Count)
+                _rows[i] = vm;
+            else
+                _rows.Add(vm);
+        }
+        // Remove excess rows
+        while (_rows.Count > sorted.Count)
+            _rows.RemoveAt(_rows.Count - 1);
 
         // Status bar
         StatusConnections.Text = $"Connections: {_rows.Count}";

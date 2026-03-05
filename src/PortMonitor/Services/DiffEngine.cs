@@ -68,6 +68,7 @@ public class DiffEngine
                 IsClosed      = true,
                 ClosedCycles  = prev.ClosedCycles + 1
             };
+            advanced.ComputeKey();
             result.Add(advanced);
             nextClosed[advanced.Key] = advanced;
         }
@@ -92,6 +93,7 @@ public class DiffEngine
                 IsClosed      = true,
                 ClosedCycles  = 1
             };
+            closed.ComputeKey();
             result.Add(closed);
             nextClosed[closed.Key] = closed;
         }

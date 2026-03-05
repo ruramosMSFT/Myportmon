@@ -63,7 +63,10 @@ public class ConnectionEntry
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     /// <summary>Unique key used for diff comparison across poll cycles.</summary>
-    public string Key => $"{Protocol}|{LocalAddress}|{LocalPort}|{RemoteAddress}|{RemotePort}";
+    public string Key { get; private set; } = string.Empty;
+
+    /// <summary>Must be called after init properties are set to compute the cached key.</summary>
+    public void ComputeKey() => Key = $"{Protocol}|{LocalAddress}|{LocalPort}|{RemoteAddress}|{RemotePort}";
 
     /// <summary>Human-readable state string.</summary>
     public string StateDisplay => State switch

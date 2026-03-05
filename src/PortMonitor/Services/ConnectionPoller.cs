@@ -1,4 +1,5 @@
 using PortMonitor.Models;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 
@@ -11,8 +12,10 @@ namespace PortMonitor.Services;
 public class ConnectionPoller
 {
     private readonly Dictionary<int, string> _processCache = new();
-    private readonly Dictionary<string, string> _dnsCache = new();
+    private readonly ConcurrentDictionary<string, string> _dnsCache = new();
+    private readonly HashSet<string> _dnsInFlight = [];
     private DateTime _cacheExpiry = DateTime.MinValue;
+    private const int MaxDnsCacheSize = 4096;
 
     /// <summary>
     /// Returns a snapshot of all current TCP and UDP connections with resolved process names.
@@ -39,8 +42,9 @@ public class ConnectionPoller
                 State         = IpHelper.MapTcpState(tcp.State),
                 Pid           = tcp.Pid,
                 ProcessName   = ResolveProcessName(tcp.Pid),
-                RemoteHost    = ResolveDns(tcp.RemoteAddr)
+                RemoteHost    = GetCachedDns(tcp.RemoteAddr)
             };
+            entry.ComputeKey();
             if (seen.Add(entry.Key))
                 entries.Add(entry);
         }
@@ -60,6 +64,7 @@ public class ConnectionPoller
                 ProcessName   = ResolveProcessName(udp.Pid),
                 RemoteHost    = string.Empty
             };
+            entry.ComputeKey();
             if (seen.Add(entry.Key))
                 entries.Add(entry);
         }
@@ -114,10 +119,10 @@ public class ConnectionPoller
     }
 
     /// <summary>
-    /// Reverse-DNS lookup with persistent cache. Returns the FQDN or empty string.
-    /// Skips non-routable addresses (0.0.0.0, 127.*, *).
+    /// Returns cached DNS result if available, otherwise fires a background resolve.
+    /// Never blocks the calling thread.
     /// </summary>
-    private string ResolveDns(string ip)
+    private string GetCachedDns(string ip)
     {
         if (string.IsNullOrEmpty(ip) || ip == "*" || ip == "0.0.0.0" || ip.StartsWith("127."))
             return string.Empty;
@@ -125,19 +130,44 @@ public class ConnectionPoller
         if (_dnsCache.TryGetValue(ip, out string? cached))
             return cached;
 
-        try
+        // Fire-and-forget background resolve — result appears on next poll cycle
+        ScheduleDnsResolve(ip);
+        return string.Empty;
+    }
+
+    /// <summary>Queues an async DNS lookup if not already in-flight.</summary>
+    private void ScheduleDnsResolve(string ip)
+    {
+        lock (_dnsInFlight)
         {
-            var entry = Dns.GetHostEntry(ip);
-            string host = entry.HostName;
-            // If GetHostEntry just returns the IP back, store empty
-            if (host == ip) host = string.Empty;
-            _dnsCache[ip] = host;
-            return host;
+            if (!_dnsInFlight.Add(ip)) return;   // already resolving
         }
-        catch
+
+        _ = Task.Run(async () =>
         {
-            _dnsCache[ip] = string.Empty;
-            return string.Empty;
-        }
+            try
+            {
+                // Evict oldest entries if cache is too large
+                if (_dnsCache.Count > MaxDnsCacheSize)
+                {
+                    int toRemove = _dnsCache.Count - MaxDnsCacheSize + 256;
+                    foreach (var key in _dnsCache.Keys.Take(toRemove))
+                        _dnsCache.TryRemove(key, out _);
+                }
+
+                var entry = await Dns.GetHostEntryAsync(ip).ConfigureAwait(false);
+                string host = entry.HostName;
+                if (host == ip) host = string.Empty;
+                _dnsCache[ip] = host;
+            }
+            catch
+            {
+                _dnsCache[ip] = string.Empty;
+            }
+            finally
+            {
+                lock (_dnsInFlight) { _dnsInFlight.Remove(ip); }
+            }
+        });
     }
 }

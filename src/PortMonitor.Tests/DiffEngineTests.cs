@@ -13,7 +13,8 @@ public class DiffEngineTests
                                              string remoteAddr = "0.0.0.0", int remotePort = 0,
                                              ConnectionState state = ConnectionState.Established,
                                              int pid = 100, string process = "test")
-        => new()
+    {
+        var e = new ConnectionEntry
         {
             Protocol      = proto,
             LocalAddress  = localAddr,
@@ -24,6 +25,9 @@ public class DiffEngineTests
             Pid           = pid,
             ProcessName   = process
         };
+        e.ComputeKey();
+        return e;
+    }
 
     // ── Tests: new entries ────────────────────────────────────────────────────
 
