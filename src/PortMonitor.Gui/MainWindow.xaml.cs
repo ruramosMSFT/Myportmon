@@ -22,13 +22,11 @@ public partial class MainWindow : Window
     // ── Grid data source ──────────────────────────────────────────────────────
     private readonly ObservableCollection<ConnectionViewModel> _rows = [];
 
-    // ── Filter / view / sort state ────────────────────────────────────────────
+    // ── Filter / sort state ───────────────────────────────────────────────────
     private string    _filter      = string.Empty;
-    private ViewMode  _viewMode    = ViewMode.All;
     private SortMode  _sort        = SortMode.Port;
     private bool      _initialized;
 
-    private enum ViewMode { All, ListenOnly, EstablishedOnly }
     private enum SortMode { Port, Pid, State, Process }
 
     // ── Constructor ───────────────────────────────────────────────────────────
@@ -90,16 +88,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Apply view filter
-        var filtered = merged.AsEnumerable();
-        filtered = _viewMode switch
-        {
-            ViewMode.ListenOnly      => filtered.Where(e => e.State == ConnectionState.Listen),
-            ViewMode.EstablishedOnly => filtered.Where(e => e.State == ConnectionState.Established),
-            _                        => filtered
-        };
-
         // Apply text filter
+        var filtered = merged.AsEnumerable();
         if (_filter.Length > 0)
         {
             filtered = filtered.Where(e =>
@@ -145,33 +135,6 @@ public partial class MainWindow : Window
         FilterBox.Text = string.Empty;   // triggers TextChanged → Refresh
     }
 
-    private void ViewAll_Click(object sender, RoutedEventArgs e)
-    {
-        _viewMode = ViewMode.All;
-        BtnAll.IsChecked    = true;
-        BtnListen.IsChecked = false;
-        BtnEstab.IsChecked  = false;
-        Refresh();
-    }
-
-    private void ViewListen_Click(object sender, RoutedEventArgs e)
-    {
-        bool on = BtnListen.IsChecked == true;
-        _viewMode = on ? ViewMode.ListenOnly : ViewMode.All;
-        BtnAll.IsChecked    = !on;
-        BtnEstab.IsChecked  = false;
-        Refresh();
-    }
-
-    private void ViewEstab_Click(object sender, RoutedEventArgs e)
-    {
-        bool on = BtnEstab.IsChecked == true;
-        _viewMode = on ? ViewMode.EstablishedOnly : ViewMode.All;
-        BtnAll.IsChecked    = !on;
-        BtnListen.IsChecked = false;
-        Refresh();
-    }
-
     private void SortCombo_Changed(object sender, SelectionChangedEventArgs e)
     {
         _sort = (SortCombo.SelectedIndex) switch
@@ -201,11 +164,7 @@ public partial class MainWindow : Window
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
         FilterBox.Text              = string.Empty;
-        _viewMode                   = ViewMode.All;
         _sort                       = SortMode.Port;
-        BtnAll.IsChecked            = true;
-        BtnListen.IsChecked         = false;
-        BtnEstab.IsChecked          = false;
         SortCombo.SelectedIndex     = 0;
         IntervalCombo.SelectedIndex = 1;
         _diff.Reset();

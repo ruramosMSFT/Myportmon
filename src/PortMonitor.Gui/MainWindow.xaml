@@ -28,31 +28,6 @@
                         ToolTip="Clear filter"
                         Click="ClearFilter_Click" />
 
-                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
-                           Background="{DynamicResource BorderBrush}" Margin="2,0" />
-
-                <!-- View mode -->
-                <TextBlock Text="View:" VerticalAlignment="Center" Margin="6,0,4,0" />
-
-                <ToggleButton x:Name="BtnAll" Content="All"
-                              IsChecked="True"
-                              Margin="2,0"
-                              Click="ViewAll_Click"
-                              ToolTip="Show all connections" />
-
-                <ToggleButton x:Name="BtnListen" Content="Listen"
-                              Margin="2,0"
-                              Click="ViewListen_Click"
-                              ToolTip="Show only LISTEN ports" />
-
-                <ToggleButton x:Name="BtnEstab" Content="ESTAB"
-                              Margin="2,0"
-                              Click="ViewEstab_Click"
-                              ToolTip="Show only ESTABLISHED connections" />
-
-                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
-                           Background="{DynamicResource BorderBrush}" Margin="6,0" />
-
                 <!-- Sort -->
                 <TextBlock Text="Sort:" VerticalAlignment="Center" Margin="0,0,4,0" />
                 <ComboBox x:Name="SortCombo"
