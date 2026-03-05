@@ -12,6 +12,7 @@
     <Version>1.0.0</Version>
     <Description>PortMonitor GUI — real-time Windows port monitor</Description>
     <StartupObject>PortMonitor.Gui.App</StartupObject>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
