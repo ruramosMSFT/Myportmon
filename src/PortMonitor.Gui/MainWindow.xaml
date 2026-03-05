@@ -4,7 +4,7 @@
         Title="PortMonitor v1.0 — Real-time Port Monitor"
         Height="680" Width="1200" MinHeight="400" MinWidth="800"
         Background="{DynamicResource BgPrimaryBrush}"
-        Icon="app.ico"
+        Icon="pack://application:,,,/app.ico"
         WindowStartupLocation="CenterScreen">
 
     <DockPanel>

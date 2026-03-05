@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PortMonitor\PortMonitor.csproj" />
   </ItemGroup>
 
