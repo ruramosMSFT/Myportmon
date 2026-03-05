@@ -7,6 +7,7 @@ using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Diagnostics;
 using System.Windows.Threading;
 
 namespace PortMonitor.Gui;
@@ -17,6 +18,9 @@ public partial class MainWindow : Window
     private readonly ConnectionPoller _poller  = new();
     private readonly DiffEngine       _diff    = new();
     private static readonly HttpClient _http   = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private readonly Process _self = Process.GetCurrentProcess();
+    private TimeSpan _lastCpuTime;
+    private DateTime _lastCpuCheck;
 
     // ── Timer ─────────────────────────────────────────────────────────────────
     private readonly DispatcherTimer  _timer   = new();
@@ -51,6 +55,9 @@ public partial class MainWindow : Window
             _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
             _timer.Tick    += OnTimerTick;
             _initialized    = true;   // guard: allow Refresh() to run
+
+            _lastCpuTime  = _self.TotalProcessorTime;
+            _lastCpuCheck = DateTime.UtcNow;
 
             Loaded += (_, _) =>
             {
@@ -126,6 +133,7 @@ public partial class MainWindow : Window
         StatusConnections.Text = $"Connections: {_rows.Count}";
         StatusRefresh.Text     = $"Last refresh: {DateTime.Now:HH:mm:ss}";
         StatusFilter.Text      = _filter.Length > 0 ? $"Filter: {_filter}" : string.Empty;
+        UpdateResourceStats();
     }
 
     // ── Toolbar event handlers ────────────────────────────────────────────────
@@ -178,6 +186,32 @@ public partial class MainWindow : Window
         IntervalCombo.SelectedIndex = 1;
         _diff.Reset();
         Refresh();
+    }
+
+    // ── Resource stats ────────────────────────────────────────────────────────
+
+    private void UpdateResourceStats()
+    {
+        try
+        {
+            _self.Refresh();
+            var now     = DateTime.UtcNow;
+            var cpuUsed = _self.TotalProcessorTime - _lastCpuTime;
+            var elapsed = now - _lastCpuCheck;
+
+            double cpuPct = elapsed.TotalMilliseconds > 0
+                ? cpuUsed.TotalMilliseconds / (elapsed.TotalMilliseconds * Environment.ProcessorCount) * 100.0
+                : 0;
+
+            _lastCpuTime  = _self.TotalProcessorTime;
+            _lastCpuCheck = now;
+
+            StatusCpu.Text = $"{cpuPct:0.0}%";
+
+            double memMb = _self.WorkingSet64 / (1024.0 * 1024.0);
+            StatusMem.Text = $"{memMb:0.0} MB";
+        }
+        catch { /* non-critical */ }
     }
 
     // ── Public IP ─────────────────────────────────────────────────────────────
