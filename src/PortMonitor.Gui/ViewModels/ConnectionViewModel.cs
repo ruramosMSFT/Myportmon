@@ -21,6 +21,7 @@ public sealed class ConnectionViewModel
         StateDisplay  = entry.StateDisplay;
         Pid           = entry.Pid > 0 ? entry.Pid.ToString() : "-";
         ProcessName   = entry.ProcessName;
+        RemoteHost    = entry.RemoteHost;
         IsNew         = entry.IsNew;
         IsClosed      = entry.IsClosed;
     }
@@ -35,6 +36,7 @@ public sealed class ConnectionViewModel
     public string StateDisplay  { get; }
     public string Pid           { get; }
     public string ProcessName   { get; }
+    public string RemoteHost    { get; }
 
     /// <summary>Used by DataTrigger in App.xaml to colour the row green.</summary>
     public bool IsNew    { get; }

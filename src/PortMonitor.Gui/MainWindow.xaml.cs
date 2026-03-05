@@ -125,7 +125,8 @@ public partial class MainWindow : Window
                 e.RemotePort.ToString().Contains(_filter)                             ||
                 e.ProcessName.Contains(_filter,   StringComparison.OrdinalIgnoreCase) ||
                 e.StateDisplay.Contains(_filter,  StringComparison.OrdinalIgnoreCase) ||
-                e.Pid.ToString().Contains(_filter));
+                e.Pid.ToString().Contains(_filter)                             ||
+                e.RemoteHost.Contains(_filter,    StringComparison.OrdinalIgnoreCase));
         }
 
         // Rebuild collection — efficient for typical sizes (<500 rows)

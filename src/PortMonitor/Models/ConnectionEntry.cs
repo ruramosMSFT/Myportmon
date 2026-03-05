@@ -46,6 +46,9 @@ public class ConnectionEntry
     /// <summary>Resolved process name, or "[N/A]" when access is denied.</summary>
     public string ProcessName { get; set; } = string.Empty;
 
+    /// <summary>Reverse DNS hostname of the remote address, or empty if unresolved.</summary>
+    public string RemoteHost { get; set; } = string.Empty;
+
     // ── Delta tracking ──────────────────────────────────────────────────────
 
     /// <summary>True when this entry appeared in the latest poll cycle.</summary>

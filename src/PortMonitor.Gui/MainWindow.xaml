@@ -201,6 +201,9 @@
                                     SortMemberPath="Pid" />
                 <DataGridTextColumn Header="Process"
                                     Binding="{Binding ProcessName}"
+                                    Width="140" />
+                <DataGridTextColumn Header="Remote Host"
+                                    Binding="{Binding RemoteHost}"
                                     Width="*" />
             </DataGrid.Columns>
 

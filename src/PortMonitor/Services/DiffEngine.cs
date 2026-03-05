@@ -64,6 +64,7 @@ public class DiffEngine
                 State         = prev.State,
                 Pid           = prev.Pid,
                 ProcessName   = prev.ProcessName,
+                RemoteHost    = prev.RemoteHost,
                 IsClosed      = true,
                 ClosedCycles  = prev.ClosedCycles + 1
             };
@@ -87,6 +88,7 @@ public class DiffEngine
                 State         = prev.State,
                 Pid           = prev.Pid,
                 ProcessName   = prev.ProcessName,
+                RemoteHost    = prev.RemoteHost,
                 IsClosed      = true,
                 ClosedCycles  = 1
             };

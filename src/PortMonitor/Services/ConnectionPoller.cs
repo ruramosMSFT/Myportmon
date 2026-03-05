@@ -1,5 +1,6 @@
 using PortMonitor.Models;
 using System.Diagnostics;
+using System.Net;
 
 namespace PortMonitor.Services;
 
@@ -10,6 +11,7 @@ namespace PortMonitor.Services;
 public class ConnectionPoller
 {
     private readonly Dictionary<int, string> _processCache = new();
+    private readonly Dictionary<string, string> _dnsCache = new();
     private DateTime _cacheExpiry = DateTime.MinValue;
 
     /// <summary>
@@ -36,7 +38,8 @@ public class ConnectionPoller
                 RemotePort    = tcp.RemotePort,
                 State         = IpHelper.MapTcpState(tcp.State),
                 Pid           = tcp.Pid,
-                ProcessName   = ResolveProcessName(tcp.Pid)
+                ProcessName   = ResolveProcessName(tcp.Pid),
+                RemoteHost    = ResolveDns(tcp.RemoteAddr)
             };
             if (seen.Add(entry.Key))
                 entries.Add(entry);
@@ -54,7 +57,8 @@ public class ConnectionPoller
                 RemotePort    = 0,
                 State         = ConnectionState.Udp,
                 Pid           = udp.Pid,
-                ProcessName   = ResolveProcessName(udp.Pid)
+                ProcessName   = ResolveProcessName(udp.Pid),
+                RemoteHost    = string.Empty
             };
             if (seen.Add(entry.Key))
                 entries.Add(entry);
@@ -106,6 +110,34 @@ public class ConnectionPoller
         {
             _processCache[pid] = "[N/A]";
             return "[N/A]";
+        }
+    }
+
+    /// <summary>
+    /// Reverse-DNS lookup with persistent cache. Returns the FQDN or empty string.
+    /// Skips non-routable addresses (0.0.0.0, 127.*, *).
+    /// </summary>
+    private string ResolveDns(string ip)
+    {
+        if (string.IsNullOrEmpty(ip) || ip == "*" || ip == "0.0.0.0" || ip.StartsWith("127."))
+            return string.Empty;
+
+        if (_dnsCache.TryGetValue(ip, out string? cached))
+            return cached;
+
+        try
+        {
+            var entry = Dns.GetHostEntry(ip);
+            string host = entry.HostName;
+            // If GetHostEntry just returns the IP back, store empty
+            if (host == ip) host = string.Empty;
+            _dnsCache[ip] = host;
+            return host;
+        }
+        catch
+        {
+            _dnsCache[ip] = string.Empty;
+            return string.Empty;
         }
     }
 }
