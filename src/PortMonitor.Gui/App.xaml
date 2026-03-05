@@ -13,6 +13,7 @@
         <SolidColorBrush x:Key="BorderBrush"         Color="#FF3F3F46" />
         <SolidColorBrush x:Key="FgPrimaryBrush"      Color="#FFD4D4D4" />
         <SolidColorBrush x:Key="FgMutedBrush"        Color="#FF9D9D9D" />
+        <SolidColorBrush x:Key="GridLineBrush"        Color="#FF2D2D30" />
 
         <!-- ── State colors ─────────────────────────────────────────────── -->
         <SolidColorBrush x:Key="ColorNew"         Color="#FF1A3A1A" />
@@ -193,7 +194,7 @@
             <Setter Property="BorderBrush"           Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness"       Value="0" />
             <Setter Property="GridLinesVisibility"   Value="Horizontal" />
-            <Setter Property="HorizontalGridLinesBrush" Value="#FF2D2D30" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource GridLineBrush}" />
             <Setter Property="RowBackground"         Value="{DynamicResource BgPrimaryBrush}" />
             <Setter Property="AlternatingRowBackground" Value="{DynamicResource BgSecondaryBrush}" />
             <Setter Property="FontFamily"            Value="Consolas" />
@@ -222,7 +223,7 @@
         <!-- DataGrid row style — color driven by view model properties -->
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="{DynamicResource BgPrimaryBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource FgPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource FgDefault}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsClosed}" Value="True">
                     <Setter Property="Background" Value="{DynamicResource ColorClosed}" />

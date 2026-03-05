@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
         ("Border",             "BorderBrush"),
         ("Primary Text",       "FgPrimaryBrush"),
         ("Muted Text",         "FgMutedBrush"),
+        ("Grid Lines",         "GridLineBrush"),
     ];
 
     private static readonly (string Label, string Key)[] StateColorEntries =

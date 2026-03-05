@@ -30,6 +30,7 @@ public class AppSettings
             ["BorderBrush"]         = "#FF3F3F46",
             ["FgPrimaryBrush"]      = "#FFD4D4D4",
             ["FgMutedBrush"]        = "#FF9D9D9D",
+            ["GridLineBrush"]        = "#FF2D2D30",
             // Connection state backgrounds
             ["ColorNew"]            = "#FF1A3A1A",
             ["ColorClosed"]         = "#FF2A2A2A",
