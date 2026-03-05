@@ -50,12 +50,78 @@
         </Style>
 
         <!-- ── ComboBox ──────────────────────────────────────────────────── -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background"  Value="#FFD8D8D8" />
+            <Setter Property="Foreground"  Value="#FF111111" />
+            <Setter Property="FontWeight"  Value="Bold" />
+            <Setter Property="FontFamily"  Value="Consolas" />
+            <Setter Property="FontSize"    Value="12" />
+            <Setter Property="Padding"     Value="6,3" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFAAAAAA" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#FF999999" />
+                    <Setter Property="Foreground" Value="#FF111111" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style TargetType="ComboBox">
-            <Setter Property="Background"       Value="{StaticResource BgControlBrush}" />
-            <Setter Property="Foreground"       Value="{StaticResource FgPrimaryBrush}" />
-            <Setter Property="BorderBrush"      Value="{StaticResource BorderBrush}" />
-            <Setter Property="FontFamily"       Value="Consolas" />
-            <Setter Property="FontSize"         Value="12" />
+            <Setter Property="FontFamily"  Value="Consolas" />
+            <Setter Property="FontSize"    Value="12" />
+            <Setter Property="FontWeight"  Value="Bold" />
+            <Setter Property="Foreground"  Value="#FF111111" />
+            <Setter Property="Background"  Value="#FFB8B8B8" />
+            <Setter Property="BorderBrush" Value="#FF888888" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding"     Value="4,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <!-- Header / toggle button -->
+                            <ToggleButton Focusable="False" ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition />
+                                                    <ColumnDefinition Width="18" />
+                                                </Grid.ColumnDefinitions>
+                                                <Rectangle Grid.Column="0" />
+                                                <Path Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Data="M 0 0 L 4 5 L 8 0 Z" Fill="#FF111111" />
+                                            </Grid>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <!-- Selected value display -->
+                            <ContentPresenter Margin="6,2,22,2" IsHitTestVisible="False"
+                                              VerticalAlignment="Center" HorizontalAlignment="Left"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
+                            <!-- Dropdown popup -->
+                            <Popup x:Name="Popup" Placement="Bottom" Focusable="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" PopupAnimation="Slide">
+                                <Border Background="#FFD8D8D8" BorderBrush="#FF888888" BorderThickness="1"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ComboBox}}">
+                                    <ScrollViewer>
+                                        <StackPanel IsItemsHost="True" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- ── Button ────────────────────────────────────────────────────── -->
