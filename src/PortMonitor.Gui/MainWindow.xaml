@@ -32,48 +32,51 @@
                 <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
                            Background="{DynamicResource BorderBrush}" Margin="6,0" />
 
-                <!-- Interval -->
-                <TextBlock Text="Refresh:" VerticalAlignment="Center" Margin="0,0,4,0" />
-                <ComboBox x:Name="IntervalCombo"
-                          Width="60"
-                          VerticalAlignment="Center"
-                          SelectionChanged="IntervalCombo_Changed"
-                          ToolTip="Auto-refresh interval">
-                    <ComboBoxItem Content="1 s" />
-                    <ComboBoxItem Content="2 s" IsSelected="True" />
-                    <ComboBoxItem Content="5 s" />
-                    <ComboBoxItem Content="10 s" />
-                </ComboBox>
-
-                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
-                           Background="{DynamicResource BorderBrush}" Margin="6,0" />
-
-                <!-- Actions -->
-                <Button Content="↺ Reset"
+                <!-- Settings dropdown -->
+                <Button x:Name="BtnSettings"
+                        Content="⚙ Settings"
                         Margin="2,0"
-                        Click="Reset_Click"
-                        ToolTip="Reset filter, sort, and view mode" />
-
-                <Button Content="⚙ Prereqs"
-                        Margin="2,0"
-                        Click="Prereqs_Click"
-                        ToolTip="Check prerequisites and install missing components" />
-
-                <Button Content="🎨 Colors"
-                        Margin="2,0"
-                        Click="Colors_Click"
-                        ToolTip="Customize application colors" />
-
-                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
-                           Background="{DynamicResource BorderBrush}" Margin="6,0" />
-
-                <ToggleButton x:Name="BtnDns"
-                              Content="🌐 DNS"
-                              IsChecked="True"
-                              Margin="2,0"
-                              Padding="8,3"
-                              Click="DnsToggle_Click"
-                              ToolTip="Toggle reverse DNS hostname resolution for remote addresses" />
+                        Padding="8,3"
+                        Click="Settings_Click"
+                        ToolTip="Application settings">
+                    <Button.ContextMenu>
+                        <ContextMenu x:Name="SettingsMenu"
+                                     Background="{DynamicResource BgControlBrush}"
+                                     Foreground="{DynamicResource FgPrimaryBrush}"
+                                     BorderBrush="{DynamicResource BorderBrush}">
+                            <!-- Refresh interval -->
+                            <MenuItem Header="Refresh Interval"
+                                      Foreground="{DynamicResource FgPrimaryBrush}">
+                                <MenuItem Header="1 second"  Click="Interval1_Click" />
+                                <MenuItem Header="2 seconds" Click="Interval2_Click" />
+                                <MenuItem Header="5 seconds" Click="Interval5_Click" />
+                                <MenuItem Header="10 seconds" Click="Interval10_Click" />
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem Header="↺ Reset Filters"
+                                      Click="Reset_Click"
+                                      Foreground="{DynamicResource FgPrimaryBrush}"
+                                      ToolTip="Reset filter, sort, and view mode" />
+                            <Separator />
+                            <MenuItem x:Name="MenuDns"
+                                      Header="🌐 DNS Resolution"
+                                      IsCheckable="True"
+                                      IsChecked="True"
+                                      Click="DnsToggle_Click"
+                                      Foreground="{DynamicResource FgPrimaryBrush}"
+                                      ToolTip="Toggle reverse DNS hostname resolution" />
+                            <Separator />
+                            <MenuItem Header="🎨 Colors..."
+                                      Click="Colors_Click"
+                                      Foreground="{DynamicResource FgPrimaryBrush}"
+                                      ToolTip="Customize application colors" />
+                            <MenuItem Header="⚙ Prerequisites..."
+                                      Click="Prereqs_Click"
+                                      Foreground="{DynamicResource FgPrimaryBrush}"
+                                      ToolTip="Check prerequisites and install missing components" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
 
             </WrapPanel>
         </Border>

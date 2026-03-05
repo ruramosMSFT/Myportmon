@@ -61,7 +61,7 @@ public partial class MainWindow : Window
 
             // Restore DNS toggle from persisted settings
             bool dnsOn = AppSettings.Current.GetFlag("DnsEnabled");
-            BtnDns.IsChecked     = dnsOn;
+            MenuDns.IsChecked    = dnsOn;
             _poller.DnsEnabled   = dnsOn;
             ColRemoteHost.Visibility = dnsOn ? Visibility.Visible : Visibility.Collapsed;
 
@@ -183,17 +183,24 @@ public partial class MainWindow : Window
         Refresh();
     }
 
-    private void IntervalCombo_Changed(object sender, SelectionChangedEventArgs e)
+    private void IntervalCombo_Changed(object sender, SelectionChangedEventArgs e) { }
+
+    private void SetInterval(int seconds)
     {
-        _intervalSeconds = IntervalCombo.SelectedIndex switch
-        {
-            0 => 1,
-            1 => 2,
-            2 => 5,
-            3 => 10,
-            _ => 2
-        };
+        _intervalSeconds = seconds;
         _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
+    }
+
+    private void Interval1_Click(object sender, RoutedEventArgs e)  => SetInterval(1);
+    private void Interval2_Click(object sender, RoutedEventArgs e)  => SetInterval(2);
+    private void Interval5_Click(object sender, RoutedEventArgs e)  => SetInterval(5);
+    private void Interval10_Click(object sender, RoutedEventArgs e) => SetInterval(10);
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        BtnSettings.ContextMenu.PlacementTarget = BtnSettings;
+        BtnSettings.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        BtnSettings.ContextMenu.IsOpen = true;
     }
 
     private void Reset_Click(object sender, RoutedEventArgs e)
@@ -206,7 +213,7 @@ public partial class MainWindow : Window
         BtnEstab.IsChecked          = false;
         BtnTimeWait.IsChecked       = false;
         BtnUdp.IsChecked            = false;
-        IntervalCombo.SelectedIndex = 1;
+        SetInterval(2);
         _diff.Reset();
         Refresh();
     }
@@ -282,7 +289,7 @@ public partial class MainWindow : Window
 
     private void DnsToggle_Click(object sender, RoutedEventArgs e)
     {
-        bool enabled = BtnDns.IsChecked == true;
+        bool enabled = MenuDns.IsChecked;
         _poller.DnsEnabled       = enabled;
         ColRemoteHost.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
 
