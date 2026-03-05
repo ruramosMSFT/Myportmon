@@ -1,0 +1,46 @@
+<Window x:Class="PortMonitor.Gui.PrerequisiteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PortMonitor — Prerequisite Check"
+        Height="420" Width="620"
+        MinHeight="300" MinWidth="500"
+        Background="{StaticResource BgPrimaryBrush}"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+
+    <DockPanel Margin="16">
+
+        <!-- Title -->
+        <TextBlock DockPanel.Dock="Top"
+                   Text="Prerequisite Check"
+                   FontSize="16" FontWeight="SemiBold"
+                   Foreground="{StaticResource FgPrimaryBrush}"
+                   Margin="0,0,0,12" />
+
+        <!-- Bottom buttons -->
+        <StackPanel DockPanel.Dock="Bottom"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,12,0,0">
+            <Button x:Name="BtnInstall"
+                    Content="Install Missing (via winget)"
+                    Margin="0,0,8,0"
+                    Padding="12,4"
+                    IsEnabled="False"
+                    Click="Install_Click" />
+            <Button Content="Re-check"
+                    Padding="12,4"
+                    Margin="0,0,8,0"
+                    Click="Recheck_Click" />
+            <Button Content="Close"
+                    Padding="12,4"
+                    Click="Close_Click" />
+        </StackPanel>
+
+        <!-- Results list -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="ResultsPanel" />
+        </ScrollViewer>
+
+    </DockPanel>
+</Window>

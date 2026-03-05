@@ -26,27 +26,44 @@ dotnet build PortMonitor.slnx
 
 ## Publish (create .exe)
 
-**Self-contained** — bundles the .NET runtime, runs on any Windows machine without .NET installed (~70 MB):
+### GUI app (WPF — no console window)
+
+**Self-contained** (~70 MB, no .NET install required):
 
 ```bash
-dotnet publish src/PortMonitor -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+dotnet publish src/PortMonitor.Gui -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish-gui
 ```
 
-**Framework-dependent** — requires .NET 8 on the target machine, but much smaller (~100 KB):
+Output: `publish-gui\PortMonitorGui.exe` — double-click to run.
+
+### CLI terminal app
+
+**Self-contained**:
 
 ```bash
-dotnet publish src/PortMonitor -c Release -r win-x64 -o publish
+dotnet publish src/PortMonitor.Cli -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish-cli
 ```
 
-The output `.exe` will be at `publish\portmonitor.exe`.
+Output: `publish-cli\PortMonitorCli.exe` — run from a console/PowerShell window.
+
+**Framework-dependent** (requires .NET 8, much smaller):
+
+```bash
+dotnet publish src/PortMonitor.Cli -c Release -r win-x64 -o publish-cli
+```
 
 ## Run
 
 ```bash
-dotnet run --project src/PortMonitor -- [options]
+# GUI (WPF window — no console)
+dotnet run --project src/PortMonitor.Gui
+
+# CLI (terminal, interactive)
+dotnet run --project src/PortMonitor.Cli -- [options]
 
 # or after publishing:
-portmonitor.exe [options]
+PortMonitorGui.exe          # GUI app
+PortMonitorCli.exe [opts]   # terminal app
 ```
 
 ### Options
@@ -74,20 +91,27 @@ portmonitor.exe [options]
 
 ```
 src/
-├── PortMonitor/
-│   ├── Program.cs                  Entry point, CLI args, main loop, key input
+├── PortMonitor/                       Core library (models, services, console UI)
 │   ├── Models/
-│   │   └── ConnectionEntry.cs      Data model per connection
+│   │   └── ConnectionEntry.cs         Data model per connection
 │   ├── Services/
-│   │   ├── IpHelper.cs             P/Invoke → iphlpapi.dll (PID resolution)
-│   │   ├── ConnectionPoller.cs     Data collection loop
-│   │   ├── DiffEngine.cs           New/closed delta detection
-│   │   └── PrerequisiteChecker.cs  OS/runtime/winget checks + auto-install
+│   │   ├── IpHelper.cs                P/Invoke → iphlpapi.dll (PID resolution)
+│   │   ├── ConnectionPoller.cs        Data collection loop
+│   │   ├── DiffEngine.cs              New/closed delta detection
+│   │   └── PrerequisiteChecker.cs     OS/runtime/winget checks + auto-install
 │   └── UI/
-│       ├── AppState.cs             Interactive UI state (filter, sort, page)
-│       └── ConsoleRenderer.cs      Terminal drawing logic
+│       ├── AppState.cs                Interactive UI state (filter, sort, page)
+│       └── ConsoleRenderer.cs         Terminal drawing logic
+├── PortMonitor.Cli/                   Terminal app (console window)
+│   └── Program.cs                     Entry point, CLI args, main loop, key input
+├── PortMonitor.Gui/                   WPF GUI app (no console window)
+│   ├── App.xaml / App.xaml.cs         Dark theme resources
+│   ├── MainWindow.xaml/.cs            Main window with DataGrid + toolbar
+│   ├── PrerequisiteWindow.xaml/.cs    Prerequisite check dialog
+│   └── ViewModels/
+│       └── ConnectionViewModel.cs     WPF data-binding model
 └── PortMonitor.Tests/
-    └── DiffEngineTests.cs          Unit tests for DiffEngine (9 tests)
+    └── DiffEngineTests.cs             Unit tests for DiffEngine (9 tests)
 ```
 
 ## Notes

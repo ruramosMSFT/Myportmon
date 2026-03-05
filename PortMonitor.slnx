@@ -1,5 +1,7 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/PortMonitor.Cli/PortMonitor.Cli.csproj" />
+    <Project Path="src/PortMonitor.Gui/PortMonitor.Gui.csproj" />
     <Project Path="src/PortMonitor.Tests/PortMonitor.Tests.csproj" />
     <Project Path="src/PortMonitor/PortMonitor.csproj" />
   </Folder>

@@ -26,7 +26,9 @@ public static class PrerequisiteChecker
 {
     // ── Public API ───────────────────────────────────────────────────────────
 
-    /// <summary>Runs all prerequisite checks and returns a result per item.</summary>
+    /// <summary>
+    /// Runs all prerequisite checks and returns a result per item.
+    /// </summary>
     public static IReadOnlyList<PrerequisiteResult> CheckAll() =>
     [
         CheckWindowsVersion(),
@@ -34,6 +36,30 @@ public static class PrerequisiteChecker
         CheckAdminElevation(),
         CheckWinget(),
     ];
+
+    /// <summary>
+    /// Installs all fixable items in the supplied list using winget.
+    /// Reports progress through the optional <paramref name="progress"/> callback.
+    /// </summary>
+    /// <param name="results">Results from <see cref="CheckAll"/> to process.</param>
+    /// <param name="progress">Optional callback invoked with a status message for each step.</param>
+    public static void InstallMissing(
+        IReadOnlyList<PrerequisiteResult> results,
+        Action<string>? progress = null)
+    {
+        bool wingetAvailable = results.Any(r => r.Name == "winget" && r.IsOk);
+        if (!wingetAvailable)
+        {
+            progress?.Invoke("winget is not available — cannot auto-install.");
+            return;
+        }
+
+        foreach (var item in results.Where(r => !r.IsOk && r.CanAutoFix))
+        {
+            progress?.Invoke($"Installing {item.Name}...");
+            Install(item, progress);
+        }
+    }
 
     /// <summary>
     /// Presents a full interactive prerequisite report, prompts the user to
@@ -213,12 +239,13 @@ public static class PrerequisiteChecker
     // ── Installation ─────────────────────────────────────────────────────────
 
     /// <summary>Attempts to install a component via winget.</summary>
-    private static void Install(PrerequisiteResult item)
+    private static void Install(PrerequisiteResult item, Action<string>? progress = null)
     {
         if (item.WingetId is null) return;
 
-        Console.WriteLine();
-        WriteColored($"  → Installing {item.Name} via winget...", ConsoleColor.Cyan);
+        void Report(string msg) { progress?.Invoke(msg); Console.WriteLine(msg); }
+
+        Report($"  → Installing {item.Name} via winget...");
 
         try
         {
@@ -227,7 +254,7 @@ public static class PrerequisiteChecker
                 $"install --id {item.WingetId} --silent --accept-package-agreements --accept-source-agreements")
             {
                 UseShellExecute = false,
-                CreateNoWindow  = false   // show winget progress in this console
+                CreateNoWindow  = false
             };
 
             using var proc = Process.Start(psi);
@@ -235,14 +262,13 @@ public static class PrerequisiteChecker
 
             bool success = proc?.ExitCode == 0;
             if (success)
-                WriteColored($"  ✓ {item.Name} installed successfully.", ConsoleColor.Green);
+                Report($"  ✓ {item.Name} installed successfully.");
             else
-                WriteColored($"  ✗ Installation of {item.Name} failed (exit code {proc?.ExitCode}). " +
-                             "Please install manually.", ConsoleColor.Red);
+                Report($"  ✗ Installation of {item.Name} failed (exit code {proc?.ExitCode}). Please install manually.");
         }
         catch (Exception ex)
         {
-            WriteColored($"  ✗ Could not launch winget: {ex.Message}", ConsoleColor.Red);
+            Report($"  ✗ Could not launch winget: {ex.Message}");
         }
     }
 
