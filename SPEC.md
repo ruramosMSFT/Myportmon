@@ -85,12 +85,18 @@ dotnet sln add src/PortMonitor.Tests/PortMonitor.Tests.csproj
     <RootNamespace>PortMonitor.Gui</RootNamespace>
     <Version>1.0.0</Version>
     <StartupObject>PortMonitor.Gui.App</StartupObject>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="app.ico" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PortMonitor\PortMonitor.csproj" />
   </ItemGroup>
 </Project>
 ```
+
+> **Icon notes:** `app.ico` is a multi-size ICO (256/48/32/16 px) embedded as a WPF `Resource`. The `<ApplicationIcon>` embeds it in the EXE header (Explorer icon); the XAML `Icon="pack://application:,,,/app.ico"` loads it from the assembly resource at runtime (titlebar + taskbar). A bare file-path `Icon="app.ico"` would crash in single-file publish because no loose file exists next to the EXE.
 
 ### `src/PortMonitor.Tests/PortMonitor.Tests.csproj`
 
@@ -516,7 +522,11 @@ DockPanel
 │   ├── StatusConnections
 │   ├── StatusRefresh
 │   ├── StatusAdmin
-│   └── StatusFilter
+│   ├── StatusFilter
+│   └── (DockPanel.Dock="Right") StackPanel:
+│       ├── StatusCpu         ("CPU: 0.3%")
+│       ├── StatusMem         ("Mem: 85.2 MB")
+│       └── StatusPublicIp    ("IP: x.x.x.x")
 ├── Border (DockPanel.Dock="Bottom")       ← State filter strip
 │   └── WrapPanel
 │       ├── "State Filter:" label
@@ -533,12 +543,18 @@ DockPanel
 
 Each state filter button uses `Style="{StaticResource StateFilterButton}"` with `Background="{DynamicResource ColorXxx}"` and `Foreground="{DynamicResource FgXxx}"`. All six share one `Click="StateFilter_Click"` handler; the `Tag` property identifies which state.
 
+The `<Window>` element includes `Icon="pack://application:,,,/app.ico"` to display the door-themed icon in the titlebar and taskbar.
+
 ### `MainWindow.xaml.cs` — Code-behind
 
 **Fields:**
 ```csharp
 private readonly ConnectionPoller _poller  = new();
 private readonly DiffEngine       _diff    = new();
+private static readonly HttpClient _http   = new() { Timeout = TimeSpan.FromSeconds(10) };
+private readonly Process _self = Process.GetCurrentProcess();
+private TimeSpan _lastCpuTime;
+private DateTime _lastCpuCheck;
 private readonly DispatcherTimer  _timer   = new();
 private int                       _intervalSeconds = 2;
 private readonly ObservableCollection<ConnectionViewModel> _rows = [];
@@ -547,7 +563,7 @@ private readonly HashSet<string> _stateFilters = [];
 private bool             _initialized;
 ```
 
-**Constructor guard pattern** — `_initialized = true` is set after `InitializeComponent()` completes; `Refresh()` returns early if not initialized. This prevents crashes from `SelectionChanged` events fired during XAML initialization.
+**Constructor guard pattern** — `_initialized = true` is set after `InitializeComponent()` completes; `Refresh()` returns early if not initialized. This prevents crashes from `SelectionChanged` events fired during XAML initialization. The `Loaded` event starts the timer, calls the first `Refresh()`, and kicks off `FetchPublicIpAsync()`.
 
 **`Refresh()` pipeline:**
 1. `_poller.Poll()` → `_diff.Apply()` → `merged`
@@ -555,6 +571,11 @@ private bool             _initialized;
 3. If `_filter.Length > 0` → text filter across all columns
 4. `OrderBy(e => e.LocalPort)` → rebuild `_rows`
 5. Update status bar labels
+6. Call `UpdateResourceStats()` to refresh CPU% and memory
+
+**`UpdateResourceStats()`**: Uses `Process.Refresh()` to read current `TotalProcessorTime` and `WorkingSet64`. CPU% is calculated as delta CPU time ÷ (wall-clock elapsed × core count) × 100. Memory is shown as `WorkingSet64` in MB.
+
+**`FetchPublicIpAsync()`**: Called once on `Loaded`. Hits `https://api.ipify.org` via `HttpClient` (10 s timeout). Sets `StatusPublicIp.Text` to the IP string or `"unavailable"` on failure.
 
 **Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `IntervalCombo_Changed`, `Reset_Click` (clears all filters + toggles + resets diff), `Prereqs_Click` (stops timer, shows dialog, restarts timer), `Colors_Click` (same pattern).
 
@@ -648,3 +669,4 @@ dotnet publish src/PortMonitor.Cli/PortMonitor.Cli.csproj `
 | `SortCombo_Changed` / `IntervalCombo_Changed` fires during `InitializeComponent` | Guard with `if (!_initialized) return` at the top of all event handlers |
 | WinForms + WPF type conflicts (`Color`, `MessageBox`, `TextBox`, etc.) | `GlobalUsings.cs` with explicit `global using` aliases |
 | `PortMonitorGui.exe` locked during publish | Stop the process first: `Stop-Process -Name PortMonitorGui -ErrorAction SilentlyContinue` |
+| App icon crashes single-file EXE | `Icon="app.ico"` resolves from filesystem; use `Icon="pack://application:,,,/app.ico"` + `<Resource Include="app.ico" />` in csproj to load from embedded resource |
