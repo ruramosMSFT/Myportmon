@@ -2,6 +2,7 @@ using PortMonitor.Gui.ViewModels;
 using PortMonitor.Models;
 using PortMonitor.Services;
 using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,7 @@ public partial class MainWindow : Window
     // ── Services ─────────────────────────────────────────────────────────────
     private readonly ConnectionPoller _poller  = new();
     private readonly DiffEngine       _diff    = new();
+    private static readonly HttpClient _http   = new() { Timeout = TimeSpan.FromSeconds(10) };
 
     // ── Timer ─────────────────────────────────────────────────────────────────
     private readonly DispatcherTimer  _timer   = new();
@@ -54,6 +56,7 @@ public partial class MainWindow : Window
             {
                 _timer.Start();
                 Refresh();
+                _ = FetchPublicIpAsync();
             };
         }
         catch (Exception ex)
@@ -175,6 +178,21 @@ public partial class MainWindow : Window
         IntervalCombo.SelectedIndex = 1;
         _diff.Reset();
         Refresh();
+    }
+
+    // ── Public IP ─────────────────────────────────────────────────────────────
+
+    private async Task FetchPublicIpAsync()
+    {
+        try
+        {
+            string ip = (await _http.GetStringAsync("https://api.ipify.org")).Trim();
+            StatusPublicIp.Text = ip;
+        }
+        catch
+        {
+            StatusPublicIp.Text = "unavailable";
+        }
     }
 
     private void Prereqs_Click(object sender, RoutedEventArgs e)

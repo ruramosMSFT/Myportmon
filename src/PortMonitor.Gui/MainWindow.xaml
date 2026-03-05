@@ -83,6 +83,18 @@
             <StatusBarItem>
                 <TextBlock x:Name="StatusFilter" Text="" />
             </StatusBarItem>
+            <StatusBarItem DockPanel.Dock="Right"
+                           HorizontalContentAlignment="Right"
+                           Margin="0,0,6,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Public IP: "
+                               Foreground="{DynamicResource FgMutedBrush}" />
+                    <TextBlock x:Name="StatusPublicIp"
+                               Text="…"
+                               Foreground="{DynamicResource FgPrimaryBrush}"
+                               ToolTip="Your public IP address" />
+                </StackPanel>
+            </StatusBarItem>
         </StatusBar>
 
         <!-- ══ State filter strip ═════════════════════════════════════════ -->
