@@ -33,25 +33,35 @@ public partial class MainWindow : Window
     // ── Constructor ───────────────────────────────────────────────────────────
     public MainWindow()
     {
-        InitializeComponent();
+        try
+        {
+            InitializeComponent();
 
-        ConnectionGrid.ItemsSource = _rows;
+            ConnectionGrid.ItemsSource = _rows;
 
-        // Admin status
-        bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent())
-            .IsInRole(WindowsBuiltInRole.Administrator);
-        StatusAdmin.Text        = isAdmin ? "✓ Administrator" : "⚠ Not elevated — some PIDs show [N/A]";
-        StatusAdmin.Foreground  = isAdmin
-            ? System.Windows.Media.Brushes.LimeGreen
-            : System.Windows.Media.Brushes.Yellow;
+            // Admin status
+            bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent())
+                .IsInRole(WindowsBuiltInRole.Administrator);
+            StatusAdmin.Text       = isAdmin ? "✓ Administrator" : "⚠ Not elevated — some PIDs show [N/A]";
+            StatusAdmin.Foreground = isAdmin
+                ? System.Windows.Media.Brushes.LimeGreen
+                : System.Windows.Media.Brushes.Yellow;
 
-        // Timer setup
-        _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
-        _timer.Tick    += OnTimerTick;
-        _timer.Start();
+            // Timer setup — start refresh after window is visible
+            _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
+            _timer.Tick    += OnTimerTick;
 
-        // First paint immediately
-        _ = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+            Loaded += (_, _) =>
+            {
+                _timer.Start();
+                Refresh();
+            };
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Startup error:\n\n{ex}", "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Error);
+            throw;
+        }
     }
 
     // ── Poll & render ─────────────────────────────────────────────────────────
@@ -70,7 +80,9 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusRefresh.Text = $"Error: {ex.Message}";
+            StatusRefresh.Text = $"Poll error: {ex.Message}";
+            MessageBox.Show($"Error polling connections:\n\n{ex}", "PortMonitor",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
