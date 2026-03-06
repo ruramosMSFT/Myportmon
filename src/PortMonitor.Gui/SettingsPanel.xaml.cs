@@ -5,7 +5,7 @@ namespace PortMonitor.Gui;
 public partial class SettingsPanel : Window
 {
     // ── Results (read by MainWindow after dialog closes) ─────────────────────
-    public int    IntervalSeconds  { get; private set; } = 2;
+    public int    IntervalSeconds  { get; private set; } = 5;
     public bool   DnsEnabled       { get; private set; } = true;
     public string SnapshotPath     { get; private set; } = string.Empty;
     public string SnapshotFormat   { get; private set; } = "csv";
@@ -23,14 +23,16 @@ public partial class SettingsPanel : Window
         DnsEnabled      = currentDns;
         SnapshotPath    = AppSettings.Current.GetString("SnapshotPath");
         SnapshotFormat  = AppSettings.Current.GetString("SnapshotFormat");
-        NetshTracePath  = AppSettings.Current.GetString("NetshTracePath");
+        NetshTracePath  = AppSettings.Current.GetString("CapturePath");
 
         switch (currentInterval)
         {
-            case 1:  Rb1s.IsChecked  = true; break;
             case 5:  Rb5s.IsChecked  = true; break;
             case 10: Rb10s.IsChecked = true; break;
-            default: Rb2s.IsChecked  = true; break;
+            default:
+                RbCustom.IsChecked = true;
+                TxtCustomInterval.Text = currentInterval.ToString();
+                break;
         }
         ChkDns.IsChecked       = currentDns;
         TxtSnapshotPath.Text   = SnapshotPath;
@@ -39,10 +41,10 @@ public partial class SettingsPanel : Window
         RbText.IsChecked       = SnapshotFormat == "text";
 
         // Wire changes
-        Rb1s.Checked  += (_, _) => IntervalSeconds = 1;
-        Rb2s.Checked  += (_, _) => IntervalSeconds = 2;
         Rb5s.Checked  += (_, _) => IntervalSeconds = 5;
         Rb10s.Checked += (_, _) => IntervalSeconds = 10;
+        RbCustom.Checked += (_, _) => ApplyCustomInterval();
+        TxtCustomInterval.TextChanged += (_, _) => { if (RbCustom.IsChecked == true) ApplyCustomInterval(); };
 
         ChkDns.Checked   += (_, _) => DnsEnabled = true;
         ChkDns.Unchecked += (_, _) => DnsEnabled = false;
@@ -52,6 +54,12 @@ public partial class SettingsPanel : Window
 
         TxtSnapshotPath.TextChanged += (_, _) => SnapshotPath = TxtSnapshotPath.Text.Trim();
         TxtNetshPath.TextChanged    += (_, _) => NetshTracePath = TxtNetshPath.Text.Trim();
+    }
+
+    private void ApplyCustomInterval()
+    {
+        if (int.TryParse(TxtCustomInterval.Text.Trim(), out int val) && val >= 1)
+            IntervalSeconds = val;
     }
 
     private void BrowseFolder_Click(object sender, RoutedEventArgs e)
@@ -71,7 +79,7 @@ public partial class SettingsPanel : Window
         using var dlg = new System.Windows.Forms.FolderBrowserDialog
         {
             SelectedPath        = NetshTracePath,
-            Description         = "Select netsh trace output folder",
+            Description         = "Select capture output folder",
             ShowNewFolderButton = true
         };
         if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)

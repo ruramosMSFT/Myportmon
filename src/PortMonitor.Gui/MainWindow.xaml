@@ -70,9 +70,22 @@
             </StatusBarItem>
             <Separator Background="{DynamicResource BorderBrush}" />
             <StatusBarItem>
-                <TextBlock x:Name="StatusNetsh" Text=""
+                <TextBlock x:Name="StatusCapture" Text=""
                            Foreground="#FF00DDDD"
-                           ToolTip="Netsh trace capture status" />
+                           ToolTip="Packet capture status (pktmon)" />
+            </StatusBarItem>
+            <StatusBarItem>
+                <Button x:Name="BtnStopCapture"
+                        Content="Stop Capture"
+                        Padding="8,1"
+                        Click="StopCapture_Click"
+                        ToolTip="Stop the active packet capture" />
+            </StatusBarItem>
+            <StatusBarItem>
+                <Button Content="Manual Capture"
+                        Padding="8,1"
+                        Click="ManualCapture_Click"
+                        ToolTip="Open manual capture dialog — configure IP/port filters" />
             </StatusBarItem>
             <StatusBarItem DockPanel.Dock="Right"
                            HorizontalContentAlignment="Right"
@@ -163,12 +176,9 @@
 
             <DataGrid.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="🔍 Start Netsh Capture"
-                              Click="StartNetshCapture_Click"
-                              ToolTip="Start a netsh trace filtered to this connection (requires Admin)" />
-                    <MenuItem Header="⬛ Stop Netsh Capture"
-                              Click="StopNetshCapture_Click"
-                              ToolTip="Stop the running netsh trace" />
+                    <MenuItem Header="🔍 Start Capture"
+                              Click="StartCapture_Click"
+                              ToolTip="Start a pktmon packet capture filtered to this connection (requires Admin)" />
                 </ContextMenu>
             </DataGrid.ContextMenu>
 

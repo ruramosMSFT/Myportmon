@@ -24,7 +24,7 @@ public partial class MainWindow : Window
 
     // ── Timer ─────────────────────────────────────────────────────────────────
     private readonly DispatcherTimer  _timer   = new();
-    private int                       _intervalSeconds = 2;
+    private int                       _intervalSeconds = 5;
 
     // ── Grid data source ──────────────────────────────────────────────────────
     private readonly ObservableCollection<ConnectionViewModel> _rows = [];
@@ -35,8 +35,12 @@ public partial class MainWindow : Window
     private bool             _initialized;
     private bool             _isAdmin;
 
-    // ── Netsh trace ───────────────────────────────────────────────────────────
-    private Process? _netshProcess;
+    // ── Packet capture (pktmon) ────────────────────────────────────────────────
+    private bool _captureRunning;
+    private string? _activeTraceFileName;
+    private string? _activeTracePath;
+    private static readonly string _captureLogPath =
+        System.IO.Path.Combine(AppContext.BaseDirectory, "pktmon.log");
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public MainWindow()
@@ -68,11 +72,17 @@ public partial class MainWindow : Window
             _poller.DnsEnabled   = dnsOn;
             ColRemoteHost.Visibility = dnsOn ? Visibility.Visible : Visibility.Collapsed;
 
+            // Restore refresh interval from persisted settings
+            if (int.TryParse(AppSettings.Current.GetString("RefreshInterval"), out int savedInterval) && savedInterval >= 1)
+                _intervalSeconds = savedInterval;
+            _timer.Interval = TimeSpan.FromSeconds(_intervalSeconds);
+
             Loaded += (_, _) =>
             {
                 _timer.Start();
                 Refresh();
                 _ = FetchPublicIpAsync();
+                _ = RefreshCaptureStatusAsync();
             };
 
             Closed += (_, _) =>
@@ -90,7 +100,13 @@ public partial class MainWindow : Window
 
     // ── Poll & render ─────────────────────────────────────────────────────────
 
-    private void OnTimerTick(object? sender, EventArgs e) => Refresh();
+    private void OnTimerTick(object? sender, EventArgs e)
+    {
+        Refresh();
+
+        if (DateTime.Now.Second % Math.Max(2, _intervalSeconds) == 0)
+            _ = RefreshCaptureStatusAsync();
+    }
 
     private void Refresh()
     {
@@ -210,10 +226,11 @@ public partial class MainWindow : Window
             AppSettings.Current.SetFlag("DnsEnabled", dlg.DnsEnabled);
         }
 
-        // Persist snapshot + netsh settings
+        // Persist snapshot + capture + interval settings
         AppSettings.Current.SetString("SnapshotPath",   dlg.SnapshotPath);
         AppSettings.Current.SetString("SnapshotFormat", dlg.SnapshotFormat);
-        AppSettings.Current.SetString("NetshTracePath", dlg.NetshTracePath);
+        AppSettings.Current.SetString("CapturePath", dlg.NetshTracePath);
+        AppSettings.Current.SetString("RefreshInterval", dlg.IntervalSeconds.ToString());
         AppSettings.Current.Save();
 
         // Handle action buttons
@@ -227,7 +244,7 @@ public partial class MainWindow : Window
             BtnEstab.IsChecked    = false;
             BtnTimeWait.IsChecked = false;
             BtnUdp.IsChecked      = false;
-            SetInterval(2);
+            SetInterval(5);
             _diff.Reset();
         }
 
@@ -395,20 +412,20 @@ public partial class MainWindow : Window
     private static string Esc(string v) =>
         v.Contains(',') || v.Contains('"') ? $"\"{v.Replace("\"", "\"\"")}\"" : v;
 
-    // ── Netsh trace capture ───────────────────────────────────────────────────
+    // ── Packet capture (pktmon) ────────────────────────────────────────────────
 
-    private void StartNetshCapture_Click(object sender, RoutedEventArgs e)
+    private async void StartCapture_Click(object sender, RoutedEventArgs e)
     {
         if (!_isAdmin)
         {
-            MessageBox.Show("Netsh trace requires Administrator elevation.\nRestart the app as Administrator.",
+            MessageBox.Show("Packet capture requires Administrator elevation.\nRestart the app as Administrator.",
                 "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (_netshProcess != null && !_netshProcess.HasExited)
+        if (_captureRunning)
         {
-            MessageBox.Show("A netsh trace is already running.\nStop it first before starting a new one.",
+            MessageBox.Show("A capture is already running.\nStop it first before starting a new one.",
                 "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -416,112 +433,253 @@ public partial class MainWindow : Window
         var selected = ConnectionGrid.SelectedItem as ConnectionViewModel;
         if (selected == null)
         {
-            StatusNetsh.Text = "Netsh: select a connection row first";
+            StatusCapture.Text = "Capture: select a connection row first";
             return;
         }
 
-        string traceFolder = AppSettings.Current.GetString("NetshTracePath");
+        // Parse port from selected row
+        int port = 0;
+        if (int.TryParse(selected.RemotePortDisplay, out int rp) && rp > 0)
+            port = rp;
+
+        await StartPktmonCaptureAsync(selected.RemoteAddress, port > 0 ? port.ToString() : null);
+    }
+
+    private void ManualCapture_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isAdmin)
+        {
+            MessageBox.Show("Packet capture requires Administrator elevation.\nRestart the app as Administrator.",
+                "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dlg = new ManualCaptureWindow(_captureRunning) { Owner = this };
+        dlg.ShowDialog();
+
+        if (dlg.RequestStart)
+            _ = StartPktmonCaptureAsync(dlg.FilterIp, dlg.FilterPort);
+        else if (dlg.RequestStop)
+            StopCapture_Click(sender, e);
+    }
+
+    private async Task StartPktmonCaptureAsync(string? ip, string? port)
+    {
+        if (_captureRunning)
+        {
+            MessageBox.Show("A capture is already running.\nStop it first before starting a new one.",
+                "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        string traceFolder = AppSettings.Current.GetString("CapturePath");
         if (string.IsNullOrWhiteSpace(traceFolder))
         {
-            StatusNetsh.Text = "Netsh: trace folder not set — configure in Settings";
+            StatusCapture.Text = "Capture: trace folder not set — configure in Settings";
             return;
         }
 
-        // Ensure folder exists
         try { System.IO.Directory.CreateDirectory(traceFolder); }
         catch
         {
-            StatusNetsh.Text = $"Netsh: cannot create folder {traceFolder}";
+            StatusCapture.Text = $"Capture: cannot create folder {traceFolder}";
             return;
         }
 
         // Build trace file name
-        string fileName = $"trace_{selected.LocalAddress}_{selected.LocalPort}_{DateTime.Now:yyyyMMdd_HHmmss}.etl";
-        // Sanitize
+        string label = string.IsNullOrWhiteSpace(ip) ? "all" : ip!;
+        if (!string.IsNullOrWhiteSpace(port)) label += $"_{port}";
+        string fileName = $"capture_{label}_{DateTime.Now:yyyyMMdd_HHmmss}.etl";
         foreach (char c in System.IO.Path.GetInvalidFileNameChars())
             fileName = fileName.Replace(c, '_');
         string tracePath = System.IO.Path.Combine(traceFolder, fileName);
 
-        // Determine protocol number (6=TCP, 17=UDP)
-        string protoNum = selected.Protocol == "UDP" ? "17" : "6";
+        // Step 1: Remove any existing filters
+        CaptureLog("CLEAN  pktmon filter remove");
+        await RunCommandAsync("pktmon", "filter remove", 10000);
 
-        // Build netsh command args
-        string args = $"trace start capture=yes report=no correlation=no overwrite=yes " +
-                       $"tracefile=\"{tracePath}\" " +
-                       $"IPv4.SourceAddress={selected.LocalAddress} " +
-                       $"IPv4.DestinationAddress={selected.RemoteAddress} " +
-                       $"Protocol={protoNum} " +
-                       $"provider=Microsoft-Windows-TCPIP providerFilter=yes";
+        // Step 2: Add filters (IP and/or port)
+        bool hasIp   = !string.IsNullOrWhiteSpace(ip);
+        bool hasPort = !string.IsNullOrWhiteSpace(port);
 
-        // Add port filter
-        int port = 0;
-        if (int.TryParse(selected.RemotePortDisplay, out int rp) && rp > 0)
-            port = rp;
-        else if (selected.LocalPort > 0)
-            port = selected.LocalPort;
-
-        if (port > 0)
-            args += $" TCP.AnyPort={port}";
-
-        try
+        if (hasIp || hasPort)
         {
-            var psi = new ProcessStartInfo("netsh", args)
+            string filterFlags = "";
+            if (hasIp)   filterFlags += $" -i {ip}";
+            if (hasPort) filterFlags += $" -p {port}";
+
+            string filterArgs = $"filter add PortMonCapture{filterFlags}";
+            CaptureLog($"FILTER pktmon {filterArgs}");
+            var filterResult = await RunCommandAsync("pktmon", filterArgs, 10000);
+            CaptureLog($"RESULT success={filterResult.Success}  output={filterResult.Message}");
+            if (!filterResult.Success)
             {
-                UseShellExecute = false,
-                CreateNoWindow  = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError  = true
-            };
-
-            _netshProcess = Process.Start(psi);
-
-            StatusNetsh.Text = $"🔴 Netsh capturing → {fileName}";
-            StatusNetsh.Foreground = System.Windows.Media.Brushes.OrangeRed;
+                UpdateCaptureStatusVisual($"Capture filter error: {filterResult.Message}", System.Windows.Media.Brushes.Yellow);
+                return;
+            }
         }
-        catch (Exception ex)
+        else
         {
-            StatusNetsh.Text = $"Netsh error: {ex.Message}";
-            _netshProcess = null;
+            CaptureLog("FILTER none — capturing all traffic");
         }
-    }
 
-    private async void StopNetshCapture_Click(object sender, RoutedEventArgs e)
-    {
-        if (_netshProcess == null || _netshProcess.HasExited)
+        // Step 3: Start capture — capture full packets at NIC level
+        string startArgs = $"start --capture --comp nics --pkt-size 0 --file-name \"{tracePath}\"";
+        CaptureLog($"START  pktmon {startArgs}");
+        var startResult = await RunCommandAsync("pktmon", startArgs, 15000);
+        CaptureLog($"RESULT success={startResult.Success}  output={startResult.Message}");
+
+        if (!startResult.Success)
         {
-            StatusNetsh.Text = "Netsh: no active capture";
-            StatusNetsh.Foreground = (System.Windows.Media.Brush)FindResource("FgPrimaryBrush");
-            _netshProcess = null;
+            UpdateCaptureStatusVisual($"Capture error: {startResult.Message}", System.Windows.Media.Brushes.Yellow);
             return;
         }
 
-        StatusNetsh.Text = "Netsh: stopping capture...";
+        _captureRunning = true;
+        _activeTraceFileName = fileName;
+        _activeTracePath = tracePath;
+        UpdateCaptureStatusVisual($"🔴 Capturing → {fileName}", System.Windows.Media.Brushes.OrangeRed);
+        await RefreshCaptureStatusAsync();
+    }
 
+    private async void StopCapture_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateCaptureStatusVisual("Capture: stopping...", System.Windows.Media.Brushes.Yellow);
+
+        string? etlPath = _activeTracePath;
+
+        CaptureLog("STOP   pktmon stop");
+        var result = await RunCommandAsync("pktmon", "stop", 15000);
+        CaptureLog($"RESULT success={result.Success}  output={result.Message}");
+
+        // Clean up filters
+        CaptureLog("CLEAN  pktmon filter remove");
+        await RunCommandAsync("pktmon", "filter remove", 10000);
+
+        _captureRunning = false;
+        _activeTraceFileName = null;
+        _activeTracePath = null;
+
+        if (!result.Success)
+        {
+            UpdateCaptureStatusVisual($"Capture: {result.Message}", (System.Windows.Media.Brush)FindResource("FgPrimaryBrush"));
+            return;
+        }
+
+        // Convert .etl to .pcap
+        if (!string.IsNullOrEmpty(etlPath) && System.IO.File.Exists(etlPath))
+        {
+            string pcapPath = System.IO.Path.ChangeExtension(etlPath, ".pcap");
+            string convertArgs = $"etl2pcap \"{etlPath}\" --out \"{pcapPath}\"";
+            CaptureLog($"CONVERT pktmon {convertArgs}");
+            UpdateCaptureStatusVisual("Converting to pcap...", System.Windows.Media.Brushes.Yellow);
+
+            var convertResult = await RunCommandAsync("pktmon", convertArgs, 30000);
+            CaptureLog($"RESULT success={convertResult.Success}  output={convertResult.Message}");
+
+            if (convertResult.Success)
+            {
+                string pcapName = System.IO.Path.GetFileName(pcapPath);
+                UpdateCaptureStatusVisual($"✓ Capture saved: {pcapName}", System.Windows.Media.Brushes.LimeGreen);
+            }
+            else
+            {
+                UpdateCaptureStatusVisual($"✓ Stopped (pcap convert failed: {convertResult.Message})", System.Windows.Media.Brushes.Yellow);
+            }
+        }
+        else
+        {
+            UpdateCaptureStatusVisual("✓ Capture stopped", System.Windows.Media.Brushes.LimeGreen);
+        }
+    }
+
+    private async Task RefreshCaptureStatusAsync()
+    {
         try
         {
-            // netsh trace stop — this tells the running trace session to stop and flush
-            var stopPsi = new ProcessStartInfo("netsh", "trace stop")
+            bool running = await IsCaptureRunningAsync();
+            _captureRunning = running;
+
+            if (!running)
+            {
+                _activeTraceFileName = null;
+                if (StatusCapture.Text.StartsWith("🔴 Capturing", StringComparison.Ordinal))
+                    UpdateCaptureStatusVisual("Capture: idle", (System.Windows.Media.Brush)FindResource("FgPrimaryBrush"));
+            }
+            else if (!StatusCapture.Text.StartsWith("🔴 Capturing", StringComparison.Ordinal))
+            {
+                UpdateCaptureStatusVisual($"🔴 Capturing{(_activeTraceFileName is null ? string.Empty : $" → {_activeTraceFileName}")}", System.Windows.Media.Brushes.OrangeRed);
+            }
+        }
+        catch { }
+    }
+
+    private void UpdateCaptureStatusVisual(string text, System.Windows.Media.Brush brush)
+    {
+        StatusCapture.Text = text;
+        StatusCapture.Foreground = brush;
+    }
+
+    private async Task<bool> IsCaptureRunningAsync()
+    {
+        var result = await RunCommandAsync("pktmon", "status", 10000);
+        if (!result.Success)
+            return false;
+
+        // pktmon status prints "Logger:  Active" when a capture is running
+        return result.Message.Contains("Active", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void CaptureLog(string entry)
+    {
+        try
+        {
+            System.IO.File.AppendAllText(_captureLogPath,
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {entry}{Environment.NewLine}");
+        }
+        catch { /* non-critical */ }
+    }
+
+    private static async Task<(bool Success, string Message)> RunCommandAsync(string exe, string args, int timeoutMs)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo(exe, args)
             {
                 UseShellExecute = false,
-                CreateNoWindow  = true,
+                CreateNoWindow = true,
                 RedirectStandardOutput = true,
-                RedirectStandardError  = true
+                RedirectStandardError = true
             };
 
-            using var stopProc = Process.Start(stopPsi);
-            if (stopProc != null)
-                await Task.Run(() => stopProc.WaitForExit(30000));
+            using var proc = new Process { StartInfo = psi };
+            proc.Start();
 
-            _netshProcess.Dispose();
-            _netshProcess = null;
+            Task<string> stdoutTask = proc.StandardOutput.ReadToEndAsync();
+            Task<string> stderrTask = proc.StandardError.ReadToEndAsync();
+            Task waitTask = proc.WaitForExitAsync();
+            Task completed = await Task.WhenAny(waitTask, Task.Delay(timeoutMs));
 
-            StatusNetsh.Text = "✓ Netsh capture stopped";
-            StatusNetsh.Foreground = System.Windows.Media.Brushes.LimeGreen;
+            if (completed != waitTask)
+            {
+                try { proc.Kill(true); } catch { }
+                return (false, "command timed out");
+            }
+
+            string stdout = await stdoutTask;
+            string stderr = await stderrTask;
+            string message = string.IsNullOrWhiteSpace(stderr)
+                ? stdout.Trim()
+                : $"{stdout}\n{stderr}".Trim();
+
+            if (proc.ExitCode != 0)
+                return (false, string.IsNullOrWhiteSpace(message) ? $"exit code {proc.ExitCode}" : message);
+
+            return (true, message);
         }
         catch (Exception ex)
         {
-            StatusNetsh.Text = $"Netsh stop error: {ex.Message}";
-            _netshProcess = null;
+            return (false, ex.Message);
         }
     }
 }

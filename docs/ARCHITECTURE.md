@@ -10,8 +10,9 @@ This document explains what each part of the codebase does, why it was built thi
 2. [Core Library — PortMonitor](#2-core-library--portmonitor)
 3. [WPF GUI — PortMonitor.Gui](#3-wpf-gui--portmonitorgui)
 4. [CLI Terminal — PortMonitor.Cli](#4-cli-terminal--portmonitorcli)
-5. [Design Decisions & Trade-offs](#5-design-decisions--trade-offs)
-6. [Alternatives Considered](#6-alternatives-considered)
+5. [Packet Capture (pktmon)](#5-packet-capture-pktmon)
+6. [Design Decisions & Trade-offs](#6-design-decisions--trade-offs)
+7. [Alternatives Considered](#7-alternatives-considered)
 
 ---
 
@@ -275,7 +276,24 @@ persisted to `settings.json` and restored on next launch.
 use. The user sets the folder once in Settings, then every click produces a new
 timestamped file instantly. A Save-As dialog would require 3-4 clicks each time.
 
-### 3.5 SettingsPanel — Settings Dialog
+### 3.5 Persistent Settings
+
+All user-configurable values are persisted to `%AppData%\PortMonitor\settings.json`
+and restored on the next launch:
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|--------|
+| `DnsEnabled` | flag | `true` | Toggle reverse DNS resolution |
+| `SnapshotPath` | string | Desktop | Snapshot export folder |
+| `SnapshotFormat` | string | `csv` | Snapshot format (`csv` or `text`) |
+| `CapturePath` | string | `C:\Temp` | Packet capture output folder |
+| `RefreshInterval` | string | `5` | Polling interval in seconds |
+
+The refresh interval is restored in the `MainWindow` constructor before the
+timer starts. The settings dialog shows 5s/10s radio buttons plus a Custom
+option with a free-text input (minimum 1 second).
+
+### 3.6 SettingsPanel — Settings Dialog
 
 **What it does:** A modal dialog with radio buttons (refresh interval), checkboxes
 (DNS toggle), and action buttons (reset, colors, prerequisites).
@@ -290,7 +308,7 @@ poor dark-theme styling (bright hover colors inherited from Windows), and the
 dropdown disappeared on any click. A dialog provides a stable, familiar UI where
 users can change multiple settings before closing.
 
-### 3.6 SettingsWindow — Color Editor
+### 3.7 SettingsWindow — Color Editor
 
 **What it does:** A scrollable panel with 24 color rows. Each row has a label,
 a colored rectangle swatch (click to open `System.Windows.Forms.ColorDialog`),
@@ -300,7 +318,7 @@ and a hex text box. Changes preview live via `DynamicResource`.
 WinForms `ColorDialog` is the standard Windows color picker, well-known to
 users, and trivially accessed via `UseWindowsForms=true` in the csproj.
 
-### 3.7 GlobalUsings — Type Conflict Resolution
+### 3.8 GlobalUsings — Type Conflict Resolution
 
 **What it does:** Ten `global using` aliases resolve ambiguities caused by
 `UseWindowsForms=true`. For example, `Color` exists in both
@@ -310,7 +328,7 @@ users, and trivially accessed via `UseWindowsForms=true` in the csproj.
 *Without this file,* every source file would need explicit namespace qualifiers
 like `System.Windows.Media.Color` instead of just `Color`.
 
-### 3.8 DataGrid Row Coloring
+### 3.9 DataGrid Row Coloring
 
 **How it works:** `DataGridRow` style in App.xaml uses `DataTrigger` bindings
 to `IsClosed`, `StateDisplay`, and `IsNew` properties of the ViewModel. Each
@@ -319,7 +337,7 @@ trigger sets `Background` and `Foreground` to the corresponding state brush.
 **Trigger order matters:** `IsNew` is last so it wins over state-based colors
 (a new LISTEN connection shows green `[NEW]` styling, not yellow LISTEN styling).
 
-### 3.9 State Filter Buttons
+### 3.10 State Filter Buttons
 
 **What it does:** Six `ToggleButton` controls at the bottom of the window, each
 styled with the state's color and a custom `ControlTemplate` that shows
@@ -348,7 +366,59 @@ characters) gives smooth, flicker-free updates.
 
 ---
 
-## 5. Design Decisions & Trade-offs
+## 5. Packet Capture (pktmon)
+
+### 5.1 Why pktmon?
+
+The app uses Windows’ built-in `pktmon` (Packet Monitor, available on Windows 10
+1809+) for network capture. This was chosen over `netsh trace` which had issues
+with empty captures and complex filtering syntax.
+
+*Why not netsh trace?* `netsh trace` was the initial implementation but produced
+empty captures due to its complex provider/scenario/filter model. `pktmon` is
+simpler, produces standard ETL files, and has built-in ETL-to-PCAP conversion.
+
+*Why not Npcap/WinPcap?* These require third-party driver installation. `pktmon`
+is built into Windows — zero dependencies.
+
+### 5.2 Capture Flow
+
+**Start (from right-click or Manual Capture dialog):**
+1. `pktmon filter remove` — remove stale filters from previous sessions
+2. `pktmon filter add PortMonCapture -i <IP> -p <port>` — add filter (either or
+   both optional; if both empty, no filter added → captures all traffic)
+3. `pktmon start --capture --comp nics --pkt-size 0 --file-name "<path>.etl"` —
+   full-packet capture at NIC level
+
+**Stop (from status bar Stop Capture button or Manual Capture dialog):**
+1. `pktmon stop`
+2. `pktmon filter remove` — cleanup
+3. `pktmon etl2pcap "<file>.etl" --out "<file>.pcap"` — auto-convert to pcap
+
+### 5.3 Key Design Decisions
+
+| Decision | Rationale |
+|----------|----------|
+| `--comp nics` | Capture at the network adapter level, not internal stack components |
+| `--pkt-size 0` | Capture full packets, not truncated headers |
+| Named filter (`PortMonCapture`) | pktmon requires a filter name as the first positional argument |
+| `-i` for IP, `-p` for port | AND filter — both conditions must match |
+| Auto ETL→PCAP conversion | Users can open captures directly in Wireshark |
+| `pktmon.log` next to EXE | All commands and results logged for troubleshooting |
+| Admin-only enforcement | pktmon requires elevated privileges; GUI checks before attempting |
+
+### 5.4 Manual Capture Dialog
+
+`ManualCaptureWindow` provides a dedicated UI for custom captures:
+- Text fields for destination IP and port (both optional)
+- Port validated 1-65535
+- Start/Stop buttons (mutually exclusive based on capture state)
+- If both empty → captures all machine traffic (no filter)
+- Results passed back to MainWindow via properties (`RequestStart`, `FilterIp`, `FilterPort`)
+
+---
+
+## 6. Design Decisions & Trade-offs
 
 | Decision | Rationale |
 |----------|-----------|
@@ -365,9 +435,14 @@ characters) gives smooth, flicker-free updates.
 | **WingetId regex validation** | Prevents command injection when constructing `winget install` command |
 | **Self-contained single-file publish** | Users get one EXE, no .NET install needed; `IncludeNativeLibrariesForSelfExtract` required for WPF |
 
+| **Persistent settings** | All user prefs (interval, DNS, snapshot, capture folder) saved to JSON and restored on startup |
+| **pktmon over netsh trace** | pktmon is simpler, produces valid captures, has built-in pcap conversion |
+| **Named pktmon filter** | Required — without a name, pktmon ignores the `-i`/`-p` flags |
+| **Manual Capture dialog** | Lets users capture arbitrary traffic without a matching grid row |
+
 ---
 
-## 6. Alternatives Considered
+## 7. Alternatives Considered
 
 ### 6.1 Different Data Sources
 
@@ -409,4 +484,4 @@ characters) gives smooth, flicker-free updates.
 
 ---
 
-*This document reflects the state of the codebase at v1.3.0.*
+*This document reflects the state of the codebase at v1.4.0.*

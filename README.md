@@ -4,23 +4,26 @@ Real-time interactive Windows port monitor — a modern CLI alternative to Sysin
 
 ## Download
 
-**[PortMonitorGui.exe v1.3.0](https://github.com/ruramosMSFT/Myportmon/releases/tag/v1.3.0)** — self-contained Windows x64 executable (~155 MB). No .NET install required. Double-click to run.
+**[PortMonitorGui.exe v1.4.0](https://github.com/ruramosMSFT/Myportmon/releases/tag/v1.4.0)** — self-contained Windows x64 executable (~155 MB). No .NET install required. Double-click to run.
 
 > Run as Administrator for full PID→process name resolution.
 
 ## Features
 
-- Polls all active **TCP + UDP connections** every N seconds (configurable 1/2/5/10s)
+- Polls all active **TCP + UDP connections** every N seconds (configurable 5/10/custom, persistent across restarts)
 - Columns: `Tag | Proto | Local Address | L.Port | Remote Address | R.Port | State | PID | Process | Remote Host`
 - **Remote Host** — async reverse DNS lookup (FQDN) with persistent cache, toggleable via Settings
 - **Color-coded by state**: LISTEN (yellow), ESTABLISHED (green), TIME_WAIT/CLOSE_WAIT (red), UDP (cyan)
 - **Delta detection**: marks `[NEW]` connections and `[CLS]` closed connections (fade-out after 2 cycles)
 - **State filter buttons**: clickable toggles for NEW, CLOSED, LISTEN, ESTABLISHED, TIME_WAIT, UDP
 - **Interactive text filtering** by IP, port, process name, hostname, or state
-- **Settings dialog** — refresh interval, DNS toggle, snapshot export config, colors, prerequisites
+- **Settings dialog** — refresh interval (5s/10s/custom), DNS toggle, snapshot export config, capture folder, colors, prerequisites
 - **Snapshot export** — 📷 button exports current connections to CSV or text file (folder + format configurable)
+- **Packet capture (pktmon)** — right-click a connection to start a filtered capture (destination IP + port), or use **Manual Capture** for custom IP/port filters. Captures are auto-converted to `.pcap` on stop. All commands logged to `pktmon.log`
+- **Manual Capture dialog** — configure IP and/or port filters manually, start/stop capture from a dedicated window
 - **Customizable dark theme** — 24 color keys, JSON-persisted to `%AppData%\PortMonitor\settings.json`
-- **Status bar**: connection count, last refresh, admin status, CPU%, memory, public IP
+- **All settings persistent** — refresh interval, DNS, snapshot path/format, capture folder saved and restored on restart
+- **Status bar**: connection count, last refresh, admin status, capture status + stop/manual buttons, CPU%, memory, public IP
 - **Door-themed app icon** (multi-size ICO: 256/48/32/16px)
 - Optional file logging of new/closed events (CLI)
 
@@ -113,7 +116,8 @@ src/
 ├── PortMonitor.Gui/                   WPF GUI app (no console window)
 │   ├── App.xaml / App.xaml.cs         Dark theme resources + global styles
 │   ├── MainWindow.xaml/.cs            Main window with DataGrid + toolbar
-│   ├── SettingsPanel.xaml/.cs         Settings dialog (interval, DNS, export, actions)
+│   ├── SettingsPanel.xaml/.cs         Settings dialog (interval, DNS, export, capture, actions)
+│   ├── ManualCaptureWindow.xaml/.cs   Manual packet capture dialog (IP/port filters)
 │   ├── SettingsWindow.xaml/.cs        Color customization dialog
 │   ├── PrerequisiteWindow.xaml/.cs    Prerequisite check dialog
 │   ├── AppSettings.cs                 Persistent colors, flags, strings (JSON)
@@ -136,3 +140,5 @@ src/
 - Process names that cannot be resolved (Access Denied) appear as `[N/A]`.
 - DNS resolution is async (non-blocking) with a bounded cache (4096 entries). Results appear on the next poll cycle.
 - The `ConnectionEntry.Key` is computed once and cached to avoid repeated string allocations.
+- Packet capture uses `pktmon` (built into Windows 10+). Requires Administrator. Captures are filtered by destination IP and/or port, saved as `.etl`, and auto-converted to `.pcap` on stop.
+- All settings (interval, DNS, snapshot folder/format, capture folder) are persisted to `%AppData%\PortMonitor\settings.json` and restored on next launch.

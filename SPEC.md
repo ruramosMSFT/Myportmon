@@ -579,18 +579,55 @@ private bool             _initialized;
 
 **`FetchPublicIpAsync()`**: Called once on `Loaded`. Hits `https://api.ipify.org` via `HttpClient` (10 s timeout). Sets `StatusPublicIp.Text` to the IP string or `"unavailable"` on failure.
 
-**Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `Settings_Click` (opens SettingsPanel dialog, applies interval/DNS/snapshot/reset/colors/prereqs on close), `Snapshot_Click` (exports current `_rows` to CSV or text file per AppSettings), `Reset_Click`, `Prereqs_Click`, `Colors_Click`.
+**Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `Settings_Click` (opens SettingsPanel dialog, applies interval/DNS/snapshot/capture/reset/colors/prereqs on close), `Snapshot_Click` (exports current `_rows` to CSV or text file per AppSettings), `StartCapture_Click` (right-click context menu — starts pktmon capture filtered to selected row’s destination IP + port), `StopCapture_Click` (stops pktmon, cleans filters, converts .etl to .pcap), `ManualCapture_Click` (opens ManualCaptureWindow dialog), `Reset_Click`, `Prereqs_Click`, `Colors_Click`.
+
+### `ManualCaptureWindow.xaml / .cs`
+
+Dialog for manual packet capture configuration:
+
+- **Destination IP** text field (optional)
+- **Destination Port** text field (optional, validated 1-65535)
+- **Start Capture** button — triggers `StartPktmonCaptureAsync(ip, port)` in MainWindow
+- **Stop Capture** button — triggers `StopCapture_Click` in MainWindow
+- If both fields empty → captures all traffic
+- If one field filled → filters on that field only
+- Start/Stop buttons are mutually exclusive based on current capture state
+
+Results exposed as properties: `RequestStart`, `RequestStop`, `FilterIp`, `FilterPort`.
+
+### Packet Capture Architecture (pktmon)
+
+The app uses Windows’ built-in `pktmon` (Packet Monitor) for network capture. Requires Administrator.
+
+**Start capture flow:**
+1. `pktmon filter remove` — clean existing filters
+2. `pktmon filter add PortMonCapture -i <IP> -p <port>` — add filter (IP and/or port, both optional)
+3. `pktmon start --capture --comp nics --pkt-size 0 --file-name "<path>.etl"` — start full-packet capture at NIC level
+
+**Stop capture flow:**
+1. `pktmon stop` — stop capture
+2. `pktmon filter remove` — clean filters
+3. `pktmon etl2pcap "<path>.etl" --out "<path>.pcap"` — convert to pcap for Wireshark
+
+**Logging:** All pktmon commands and their output are logged to `pktmon.log` in the exe directory.
+
+**Entry points:**
+- Right-click context menu on DataGrid row → captures destination IP + port from selected connection
+- Manual Capture dialog → user enters custom IP/port filters
+- Status bar shows capture state (🔴 Capturing → filename) and provides Stop Capture + Manual Capture buttons
 
 ### `SettingsPanel.xaml / .cs`
 
 Settings dialog window with four sections:
 
-**Refresh Interval** — radio buttons: 1s / 2s / 5s / 10s (restored from current value).
+**Refresh Interval** — radio buttons: 5s / 10s / Custom (text input, minimum 1s). Restored from persisted settings (`RefreshInterval` string key). Default: 5s.
 
 **Options** — checkboxes:
 - 🌐 DNS Resolution — toggles `ConnectionPoller.DnsEnabled` and `ColRemoteHost` column visibility. Persisted to `AppSettings` flags.
 
 **Snapshot Export** — configurable folder (text box + Browse button using `FolderBrowserDialog`) and format (CSV / Text radio buttons). Defaults to Desktop + CSV. Persisted to `AppSettings` strings (`SnapshotPath`, `SnapshotFormat`).
+
+**Packet Capture (pktmon)** — configurable capture file folder (text box + Browse button). Defaults to `C:\Temp`. Persisted to `AppSettings` strings (`CapturePath`). Help text explains right-click capture and admin requirement.
 
 **Actions** — buttons:
 - ↺ Reset Filters — sets `DidReset = true`, closes dialog
