@@ -579,16 +579,18 @@ private bool             _initialized;
 
 **`FetchPublicIpAsync()`**: Called once on `Loaded`. Hits `https://api.ipify.org` via `HttpClient` (10 s timeout). Sets `StatusPublicIp.Text` to the IP string or `"unavailable"` on failure.
 
-**Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `Settings_Click` (opens SettingsPanel dialog, applies interval/DNS/reset/colors/prereqs on close), `Reset_Click`, `Prereqs_Click`, `Colors_Click`.
+**Handlers:** `FilterBox_TextChanged`, `ClearFilter_Click`, `StateFilter_Click` (adds/removes from `_stateFilters`), `Settings_Click` (opens SettingsPanel dialog, applies interval/DNS/snapshot/reset/colors/prereqs on close), `Snapshot_Click` (exports current `_rows` to CSV or text file per AppSettings), `Reset_Click`, `Prereqs_Click`, `Colors_Click`.
 
 ### `SettingsPanel.xaml / .cs`
 
-Settings dialog window with three sections:
+Settings dialog window with four sections:
 
 **Refresh Interval** — radio buttons: 1s / 2s / 5s / 10s (restored from current value).
 
 **Options** — checkboxes:
 - 🌐 DNS Resolution — toggles `ConnectionPoller.DnsEnabled` and `ColRemoteHost` column visibility. Persisted to `AppSettings` flags.
+
+**Snapshot Export** — configurable folder (text box + Browse button using `FolderBrowserDialog`) and format (CSV / Text radio buttons). Defaults to Desktop + CSV. Persisted to `AppSettings` strings (`SnapshotPath`, `SnapshotFormat`).
 
 **Actions** — buttons:
 - ↺ Reset Filters — sets `DidReset = true`, closes dialog

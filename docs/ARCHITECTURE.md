@@ -202,13 +202,18 @@ Windows dark mode rendering.
 
 ### 3.2 AppSettings — Persistent Configuration
 
-**What it does:** Stores 24 color hex values and boolean flags (currently just
-`DnsEnabled`) in a JSON file at `%AppData%\PortMonitor\settings.json`.
+**What it does:** Stores 24 color hex values, boolean flags (`DnsEnabled`), and
+string settings (`SnapshotPath`, `SnapshotFormat`) in a JSON file at
+`%AppData%\PortMonitor\settings.json`.
+
+**Three-tier storage:** `_colors` (hex strings), `_flags` (booleans), and
+`_strings` (free-text values). Each has its own getter/setter (`GetHex`/`SetHex`,
+`GetFlag`/`SetFlag`, `GetString`/`SetString`). All three are serialized into one
+JSON file under `"colors"`, `"flags"`, and `"strings"` keys.
 
 **Dual-format loading:** Supports both the current format
-(`{ "colors": {...}, "flags": {...} }`) and the legacy flat format
-(`{ "BgPrimaryBrush": "#FF...", ... }`) for backward compatibility when users
-upgrade.
+(`{ "colors": {...}, "flags": {...}, "strings": {...} }`) and the legacy flat
+format (`{ "BgPrimaryBrush": "#FF...", ... }`) for backward compatibility.
 
 **`ApplyOne` always replaces:** Instead of mutating an existing brush (which
 would throw because WPF freezes brushes after use), it creates a new
@@ -248,7 +253,29 @@ wall-clock elapsed time, normalized by `Environment.ProcessorCount`. This gives
 the app's actual CPU usage percentage. `Process.Refresh()` must be called first
 to update the cached values.
 
-### 3.4 SettingsPanel — Settings Dialog
+### 3.4 Snapshot Export
+
+**What it does:** The 📷 Snapshot toolbar button exports the current DataGrid
+contents to a file. Supports two formats:
+
+- **CSV** — standard header row + comma-separated values with proper RFC 4180
+  escaping (fields containing commas or quotes are wrapped in double-quotes).
+- **Text** — fixed-width columns with a header block showing timestamp and
+  connection count, suitable for pasting into emails or documents.
+
+**File naming:** `PortMonitor_20260306_143052.csv` — timestamped to the second
+to avoid overwriting previous snapshots.
+
+**Settings persistence:** The export folder and format are stored in
+`AppSettings._strings` (`SnapshotPath` defaults to Desktop, `SnapshotFormat`
+defaults to `csv`). The user configures these in the Settings dialog; values are
+persisted to `settings.json` and restored on next launch.
+
+*Why not a Save-As dialog?* A one-click toolbar button is faster for frequent
+use. The user sets the folder once in Settings, then every click produces a new
+timestamped file instantly. A Save-As dialog would require 3-4 clicks each time.
+
+### 3.5 SettingsPanel — Settings Dialog
 
 **What it does:** A modal dialog with radio buttons (refresh interval), checkboxes
 (DNS toggle), and action buttons (reset, colors, prerequisites).
@@ -263,7 +290,7 @@ poor dark-theme styling (bright hover colors inherited from Windows), and the
 dropdown disappeared on any click. A dialog provides a stable, familiar UI where
 users can change multiple settings before closing.
 
-### 3.5 SettingsWindow — Color Editor
+### 3.6 SettingsWindow — Color Editor
 
 **What it does:** A scrollable panel with 24 color rows. Each row has a label,
 a colored rectangle swatch (click to open `System.Windows.Forms.ColorDialog`),
@@ -273,7 +300,7 @@ and a hex text box. Changes preview live via `DynamicResource`.
 WinForms `ColorDialog` is the standard Windows color picker, well-known to
 users, and trivially accessed via `UseWindowsForms=true` in the csproj.
 
-### 3.6 GlobalUsings — Type Conflict Resolution
+### 3.7 GlobalUsings — Type Conflict Resolution
 
 **What it does:** Ten `global using` aliases resolve ambiguities caused by
 `UseWindowsForms=true`. For example, `Color` exists in both
@@ -283,7 +310,7 @@ users, and trivially accessed via `UseWindowsForms=true` in the csproj.
 *Without this file,* every source file would need explicit namespace qualifiers
 like `System.Windows.Media.Color` instead of just `Color`.
 
-### 3.7 DataGrid Row Coloring
+### 3.8 DataGrid Row Coloring
 
 **How it works:** `DataGridRow` style in App.xaml uses `DataTrigger` bindings
 to `IsClosed`, `StateDisplay`, and `IsNew` properties of the ViewModel. Each
@@ -292,7 +319,7 @@ trigger sets `Background` and `Foreground` to the corresponding state brush.
 **Trigger order matters:** `IsNew` is last so it wins over state-based colors
 (a new LISTEN connection shows green `[NEW]` styling, not yellow LISTEN styling).
 
-### 3.8 State Filter Buttons
+### 3.9 State Filter Buttons
 
 **What it does:** Six `ToggleButton` controls at the bottom of the window, each
 styled with the state's color and a custom `ControlTemplate` that shows
@@ -382,4 +409,4 @@ characters) gives smooth, flicker-free updates.
 
 ---
 
-*This document reflects the state of the codebase at v1.2.0.*
+*This document reflects the state of the codebase at v1.3.0.*

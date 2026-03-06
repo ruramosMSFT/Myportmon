@@ -4,7 +4,7 @@ Real-time interactive Windows port monitor — a modern CLI alternative to Sysin
 
 ## Download
 
-**[PortMonitorGui.exe v1.2.0](https://github.com/ruramosMSFT/Myportmon/releases/tag/v1.2.0)** — self-contained Windows x64 executable (~155 MB). No .NET install required. Double-click to run.
+**[PortMonitorGui.exe v1.3.0](https://github.com/ruramosMSFT/Myportmon/releases/tag/v1.3.0)** — self-contained Windows x64 executable (~155 MB). No .NET install required. Double-click to run.
 
 > Run as Administrator for full PID→process name resolution.
 
@@ -17,7 +17,8 @@ Real-time interactive Windows port monitor — a modern CLI alternative to Sysin
 - **Delta detection**: marks `[NEW]` connections and `[CLS]` closed connections (fade-out after 2 cycles)
 - **State filter buttons**: clickable toggles for NEW, CLOSED, LISTEN, ESTABLISHED, TIME_WAIT, UDP
 - **Interactive text filtering** by IP, port, process name, hostname, or state
-- **Settings dialog** — refresh interval, DNS toggle, colors, prerequisites
+- **Settings dialog** — refresh interval, DNS toggle, snapshot export config, colors, prerequisites
+- **Snapshot export** — 📷 button exports current connections to CSV or text file (folder + format configurable)
 - **Customizable dark theme** — 24 color keys, JSON-persisted to `%AppData%\PortMonitor\settings.json`
 - **Status bar**: connection count, last refresh, admin status, CPU%, memory, public IP
 - **Door-themed app icon** (multi-size ICO: 256/48/32/16px)
@@ -112,10 +113,10 @@ src/
 ├── PortMonitor.Gui/                   WPF GUI app (no console window)
 │   ├── App.xaml / App.xaml.cs         Dark theme resources + global styles
 │   ├── MainWindow.xaml/.cs            Main window with DataGrid + toolbar
-│   ├── SettingsPanel.xaml/.cs         Settings dialog (interval, DNS, actions)
+│   ├── SettingsPanel.xaml/.cs         Settings dialog (interval, DNS, export, actions)
 │   ├── SettingsWindow.xaml/.cs        Color customization dialog
 │   ├── PrerequisiteWindow.xaml/.cs    Prerequisite check dialog
-│   ├── AppSettings.cs                 Persistent colors + flags (JSON)
+│   ├── AppSettings.cs                 Persistent colors, flags, strings (JSON)
 │   ├── GlobalUsings.cs                WinForms/WPF type aliases
 │   ├── app.ico                        Door-themed multi-size icon
 │   └── ViewModels/
