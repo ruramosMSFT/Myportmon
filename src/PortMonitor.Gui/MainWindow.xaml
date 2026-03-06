@@ -68,6 +68,12 @@
             <StatusBarItem>
                 <TextBlock x:Name="StatusFilter" Text="" />
             </StatusBarItem>
+            <Separator Background="{DynamicResource BorderBrush}" />
+            <StatusBarItem>
+                <TextBlock x:Name="StatusNetsh" Text=""
+                           Foreground="#FF00DDDD"
+                           ToolTip="Netsh trace capture status" />
+            </StatusBarItem>
             <StatusBarItem DockPanel.Dock="Right"
                            HorizontalContentAlignment="Right"
                            Margin="0,0,6,0">
@@ -154,6 +160,17 @@
                   Margin="0"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling">
+
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="🔍 Start Netsh Capture"
+                              Click="StartNetshCapture_Click"
+                              ToolTip="Start a netsh trace filtered to this connection (requires Admin)" />
+                    <MenuItem Header="⬛ Stop Netsh Capture"
+                              Click="StopNetshCapture_Click"
+                              ToolTip="Stop the running netsh trace" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
 
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Tag"

@@ -33,6 +33,10 @@ public partial class MainWindow : Window
     private string           _filter       = string.Empty;
     private readonly HashSet<string> _stateFilters = [];
     private bool             _initialized;
+    private bool             _isAdmin;
+
+    // ── Netsh trace ───────────────────────────────────────────────────────────
+    private Process? _netshProcess;
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public MainWindow()
@@ -44,10 +48,10 @@ public partial class MainWindow : Window
             ConnectionGrid.ItemsSource = _rows;
 
             // Admin status
-            bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent())
+            _isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent())
                 .IsInRole(WindowsBuiltInRole.Administrator);
-            StatusAdmin.Text       = isAdmin ? "✓ Administrator" : "⚠ Not elevated — some PIDs show [N/A]";
-            StatusAdmin.Foreground = isAdmin
+            StatusAdmin.Text       = _isAdmin ? "✓ Administrator" : "⚠ Not elevated — some PIDs show [N/A]";
+            StatusAdmin.Foreground = _isAdmin
                 ? System.Windows.Media.Brushes.LimeGreen
                 : System.Windows.Media.Brushes.Yellow;
 
@@ -206,9 +210,10 @@ public partial class MainWindow : Window
             AppSettings.Current.SetFlag("DnsEnabled", dlg.DnsEnabled);
         }
 
-        // Persist snapshot settings
+        // Persist snapshot + netsh settings
         AppSettings.Current.SetString("SnapshotPath",   dlg.SnapshotPath);
         AppSettings.Current.SetString("SnapshotFormat", dlg.SnapshotFormat);
+        AppSettings.Current.SetString("NetshTracePath", dlg.NetshTracePath);
         AppSettings.Current.Save();
 
         // Handle action buttons
@@ -389,4 +394,134 @@ public partial class MainWindow : Window
 
     private static string Esc(string v) =>
         v.Contains(',') || v.Contains('"') ? $"\"{v.Replace("\"", "\"\"")}\"" : v;
+
+    // ── Netsh trace capture ───────────────────────────────────────────────────
+
+    private void StartNetshCapture_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isAdmin)
+        {
+            MessageBox.Show("Netsh trace requires Administrator elevation.\nRestart the app as Administrator.",
+                "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (_netshProcess != null && !_netshProcess.HasExited)
+        {
+            MessageBox.Show("A netsh trace is already running.\nStop it first before starting a new one.",
+                "PortMonitor", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var selected = ConnectionGrid.SelectedItem as ConnectionViewModel;
+        if (selected == null)
+        {
+            StatusNetsh.Text = "Netsh: select a connection row first";
+            return;
+        }
+
+        string traceFolder = AppSettings.Current.GetString("NetshTracePath");
+        if (string.IsNullOrWhiteSpace(traceFolder))
+        {
+            StatusNetsh.Text = "Netsh: trace folder not set — configure in Settings";
+            return;
+        }
+
+        // Ensure folder exists
+        try { System.IO.Directory.CreateDirectory(traceFolder); }
+        catch
+        {
+            StatusNetsh.Text = $"Netsh: cannot create folder {traceFolder}";
+            return;
+        }
+
+        // Build trace file name
+        string fileName = $"trace_{selected.LocalAddress}_{selected.LocalPort}_{DateTime.Now:yyyyMMdd_HHmmss}.etl";
+        // Sanitize
+        foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+            fileName = fileName.Replace(c, '_');
+        string tracePath = System.IO.Path.Combine(traceFolder, fileName);
+
+        // Determine protocol number (6=TCP, 17=UDP)
+        string protoNum = selected.Protocol == "UDP" ? "17" : "6";
+
+        // Build netsh command args
+        string args = $"trace start capture=yes report=no correlation=no overwrite=yes " +
+                       $"tracefile=\"{tracePath}\" " +
+                       $"IPv4.SourceAddress={selected.LocalAddress} " +
+                       $"IPv4.DestinationAddress={selected.RemoteAddress} " +
+                       $"Protocol={protoNum} " +
+                       $"provider=Microsoft-Windows-TCPIP providerFilter=yes";
+
+        // Add port filter
+        int port = 0;
+        if (int.TryParse(selected.RemotePortDisplay, out int rp) && rp > 0)
+            port = rp;
+        else if (selected.LocalPort > 0)
+            port = selected.LocalPort;
+
+        if (port > 0)
+            args += $" TCP.AnyPort={port}";
+
+        try
+        {
+            var psi = new ProcessStartInfo("netsh", args)
+            {
+                UseShellExecute = false,
+                CreateNoWindow  = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true
+            };
+
+            _netshProcess = Process.Start(psi);
+
+            StatusNetsh.Text = $"🔴 Netsh capturing → {fileName}";
+            StatusNetsh.Foreground = System.Windows.Media.Brushes.OrangeRed;
+        }
+        catch (Exception ex)
+        {
+            StatusNetsh.Text = $"Netsh error: {ex.Message}";
+            _netshProcess = null;
+        }
+    }
+
+    private async void StopNetshCapture_Click(object sender, RoutedEventArgs e)
+    {
+        if (_netshProcess == null || _netshProcess.HasExited)
+        {
+            StatusNetsh.Text = "Netsh: no active capture";
+            StatusNetsh.Foreground = (System.Windows.Media.Brush)FindResource("FgPrimaryBrush");
+            _netshProcess = null;
+            return;
+        }
+
+        StatusNetsh.Text = "Netsh: stopping capture...";
+
+        try
+        {
+            // netsh trace stop — this tells the running trace session to stop and flush
+            var stopPsi = new ProcessStartInfo("netsh", "trace stop")
+            {
+                UseShellExecute = false,
+                CreateNoWindow  = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true
+            };
+
+            using var stopProc = Process.Start(stopPsi);
+            if (stopProc != null)
+                await Task.Run(() => stopProc.WaitForExit(30000));
+
+            _netshProcess.Dispose();
+            _netshProcess = null;
+
+            StatusNetsh.Text = "✓ Netsh capture stopped";
+            StatusNetsh.Foreground = System.Windows.Media.Brushes.LimeGreen;
+        }
+        catch (Exception ex)
+        {
+            StatusNetsh.Text = $"Netsh stop error: {ex.Message}";
+            _netshProcess = null;
+        }
+    }
 }

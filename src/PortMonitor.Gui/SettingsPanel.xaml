@@ -82,6 +82,37 @@
         <!-- Separator -->
         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
 
+        <!-- Netsh Trace -->
+        <TextBlock Text="Netsh Trace Capture"
+                   FontWeight="SemiBold" FontSize="11"
+                   Foreground="{DynamicResource FgMutedBrush}"
+                   Margin="12,8,12,4" />
+        <Border Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1" Padding="8,4">
+            <StackPanel>
+                <TextBlock Text="Trace file folder:" Margin="4,2" FontSize="11"
+                           Foreground="{DynamicResource FgMutedBrush}" FontFamily="Consolas" />
+                <DockPanel Margin="4,2">
+                    <Button Content="Browse..." DockPanel.Dock="Right"
+                            Margin="6,0,0,0" Padding="8,3"
+                            Click="BrowseNetshFolder_Click" />
+                    <TextBox x:Name="TxtNetshPath"
+                             FontFamily="Consolas" FontSize="11"
+                             ToolTip="Folder where .etl trace files are saved" />
+                </DockPanel>
+                <TextBlock Text="Right-click a connection row → Start Capture to begin."
+                           Margin="4,6,4,2" FontSize="10" FontStyle="Italic"
+                           Foreground="{DynamicResource FgMutedBrush}" TextWrapping="Wrap" />
+                <TextBlock Text="Requires Administrator elevation."
+                           Margin="4,1,4,2" FontSize="10" FontStyle="Italic"
+                           Foreground="#FFFFD700" />
+            </StackPanel>
+        </Border>
+
+        <!-- Separator -->
+        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
+
         <!-- Actions -->
         <TextBlock Text="Actions"
                    FontWeight="SemiBold" FontSize="11"

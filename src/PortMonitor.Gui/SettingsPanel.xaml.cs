@@ -9,6 +9,7 @@ public partial class SettingsPanel : Window
     public bool   DnsEnabled       { get; private set; } = true;
     public string SnapshotPath     { get; private set; } = string.Empty;
     public string SnapshotFormat   { get; private set; } = "csv";
+    public string NetshTracePath   { get; private set; } = string.Empty;
     public bool   DidReset         { get; private set; }
     public bool   OpenColors       { get; private set; }
     public bool   OpenPrereqs      { get; private set; }
@@ -22,6 +23,7 @@ public partial class SettingsPanel : Window
         DnsEnabled      = currentDns;
         SnapshotPath    = AppSettings.Current.GetString("SnapshotPath");
         SnapshotFormat  = AppSettings.Current.GetString("SnapshotFormat");
+        NetshTracePath  = AppSettings.Current.GetString("NetshTracePath");
 
         switch (currentInterval)
         {
@@ -32,10 +34,11 @@ public partial class SettingsPanel : Window
         }
         ChkDns.IsChecked       = currentDns;
         TxtSnapshotPath.Text   = SnapshotPath;
+        TxtNetshPath.Text      = NetshTracePath;
         RbCsv.IsChecked        = SnapshotFormat == "csv";
         RbText.IsChecked       = SnapshotFormat == "text";
 
-        // Wire radio changes
+        // Wire changes
         Rb1s.Checked  += (_, _) => IntervalSeconds = 1;
         Rb2s.Checked  += (_, _) => IntervalSeconds = 2;
         Rb5s.Checked  += (_, _) => IntervalSeconds = 5;
@@ -48,6 +51,7 @@ public partial class SettingsPanel : Window
         RbText.Checked += (_, _) => SnapshotFormat = "text";
 
         TxtSnapshotPath.TextChanged += (_, _) => SnapshotPath = TxtSnapshotPath.Text.Trim();
+        TxtNetshPath.TextChanged    += (_, _) => NetshTracePath = TxtNetshPath.Text.Trim();
     }
 
     private void BrowseFolder_Click(object sender, RoutedEventArgs e)
@@ -60,6 +64,18 @@ public partial class SettingsPanel : Window
         };
         if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             TxtSnapshotPath.Text = dlg.SelectedPath;
+    }
+
+    private void BrowseNetshFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dlg = new System.Windows.Forms.FolderBrowserDialog
+        {
+            SelectedPath        = NetshTracePath,
+            Description         = "Select netsh trace output folder",
+            ShowNewFolderButton = true
+        };
+        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            TxtNetshPath.Text = dlg.SelectedPath;
     }
 
     private void Reset_Click(object sender, RoutedEventArgs e)

@@ -59,6 +59,7 @@ public class AppSettings
         {
             ["SnapshotPath"]   = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             ["SnapshotFormat"] = "csv",   // "csv" or "text"
+            ["NetshTracePath"] = @"C:\Temp",
         };
     }
 
