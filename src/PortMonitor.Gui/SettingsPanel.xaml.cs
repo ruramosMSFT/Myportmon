@@ -5,11 +5,13 @@ namespace PortMonitor.Gui;
 public partial class SettingsPanel : Window
 {
     // ── Results (read by MainWindow after dialog closes) ─────────────────────
-    public int    IntervalSeconds { get; private set; } = 2;
-    public bool   DnsEnabled      { get; private set; } = true;
-    public bool   DidReset        { get; private set; }
-    public bool   OpenColors      { get; private set; }
-    public bool   OpenPrereqs     { get; private set; }
+    public int    IntervalSeconds  { get; private set; } = 2;
+    public bool   DnsEnabled       { get; private set; } = true;
+    public string SnapshotPath     { get; private set; } = string.Empty;
+    public string SnapshotFormat   { get; private set; } = "csv";
+    public bool   DidReset         { get; private set; }
+    public bool   OpenColors       { get; private set; }
+    public bool   OpenPrereqs      { get; private set; }
 
     public SettingsPanel(int currentInterval, bool currentDns)
     {
@@ -18,6 +20,8 @@ public partial class SettingsPanel : Window
         // Restore current values
         IntervalSeconds = currentInterval;
         DnsEnabled      = currentDns;
+        SnapshotPath    = AppSettings.Current.GetString("SnapshotPath");
+        SnapshotFormat  = AppSettings.Current.GetString("SnapshotFormat");
 
         switch (currentInterval)
         {
@@ -26,7 +30,10 @@ public partial class SettingsPanel : Window
             case 10: Rb10s.IsChecked = true; break;
             default: Rb2s.IsChecked  = true; break;
         }
-        ChkDns.IsChecked = currentDns;
+        ChkDns.IsChecked       = currentDns;
+        TxtSnapshotPath.Text   = SnapshotPath;
+        RbCsv.IsChecked        = SnapshotFormat == "csv";
+        RbText.IsChecked       = SnapshotFormat == "text";
 
         // Wire radio changes
         Rb1s.Checked  += (_, _) => IntervalSeconds = 1;
@@ -36,6 +43,23 @@ public partial class SettingsPanel : Window
 
         ChkDns.Checked   += (_, _) => DnsEnabled = true;
         ChkDns.Unchecked += (_, _) => DnsEnabled = false;
+
+        RbCsv.Checked  += (_, _) => SnapshotFormat = "csv";
+        RbText.Checked += (_, _) => SnapshotFormat = "text";
+
+        TxtSnapshotPath.TextChanged += (_, _) => SnapshotPath = TxtSnapshotPath.Text.Trim();
+    }
+
+    private void BrowseFolder_Click(object sender, RoutedEventArgs e)
+    {
+        using var dlg = new System.Windows.Forms.FolderBrowserDialog
+        {
+            SelectedPath        = SnapshotPath,
+            Description         = "Select snapshot export folder",
+            ShowNewFolderButton = true
+        };
+        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            TxtSnapshotPath.Text = dlg.SelectedPath;
     }
 
     private void Reset_Click(object sender, RoutedEventArgs e)

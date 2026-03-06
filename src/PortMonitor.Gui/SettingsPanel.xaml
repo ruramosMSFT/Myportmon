@@ -49,6 +49,39 @@
         <!-- Separator -->
         <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
 
+        <!-- Snapshot Export -->
+        <TextBlock Text="Snapshot Export"
+                   FontWeight="SemiBold" FontSize="11"
+                   Foreground="{DynamicResource FgMutedBrush}"
+                   Margin="12,8,12,4" />
+        <Border Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1" Padding="8,4">
+            <StackPanel>
+                <TextBlock Text="Export folder:" Margin="4,2" FontSize="11"
+                           Foreground="{DynamicResource FgMutedBrush}" FontFamily="Consolas" />
+                <DockPanel Margin="4,2">
+                    <Button Content="Browse..." DockPanel.Dock="Right"
+                            Margin="6,0,0,0" Padding="8,3"
+                            Click="BrowseFolder_Click" />
+                    <TextBox x:Name="TxtSnapshotPath"
+                             FontFamily="Consolas" FontSize="11"
+                             ToolTip="Folder where snapshot files are saved" />
+                </DockPanel>
+                <TextBlock Text="Format:" Margin="4,8,4,2" FontSize="11"
+                           Foreground="{DynamicResource FgMutedBrush}" FontFamily="Consolas" />
+                <StackPanel Orientation="Horizontal" Margin="4,2">
+                    <RadioButton x:Name="RbCsv"  Content="  CSV"  GroupName="Format" IsChecked="True"
+                                 Margin="0,0,16,0" Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12" />
+                    <RadioButton x:Name="RbText" Content="  Text" GroupName="Format"
+                                 Foreground="{DynamicResource FgPrimaryBrush}" FontFamily="Consolas" FontSize="12" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Separator -->
+        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,6,0,0" />
+
         <!-- Actions -->
         <TextBlock Text="Actions"
                    FontWeight="SemiBold" FontSize="11"

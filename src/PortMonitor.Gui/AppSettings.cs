@@ -17,6 +17,7 @@ public class AppSettings
     // ── Internal store ────────────────────────────────────────────────────────
     private Dictionary<string, string> _colors;
     private Dictionary<string, bool> _flags;
+    private Dictionary<string, string> _strings;
 
     public AppSettings()
     {
@@ -54,6 +55,11 @@ public class AppSettings
         {
             ["DnsEnabled"] = true,
         };
+        _strings = new Dictionary<string, string>
+        {
+            ["SnapshotPath"]   = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            ["SnapshotFormat"] = "csv",   // "csv" or "text"
+        };
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -68,18 +74,25 @@ public class AppSettings
 
     public void SetFlag(string key, bool value) => _flags[key] = value;
 
+    public string GetString(string key) =>
+        _strings.TryGetValue(key, out var v) ? v : string.Empty;
+
+    public void SetString(string key, string value) => _strings[key] = value;
+
     public AppSettings Clone()
     {
         var clone = new AppSettings();
-        clone._colors = new Dictionary<string, string>(_colors);
-        clone._flags  = new Dictionary<string, bool>(_flags);
+        clone._colors  = new Dictionary<string, string>(_colors);
+        clone._flags   = new Dictionary<string, bool>(_flags);
+        clone._strings = new Dictionary<string, string>(_strings);
         return clone;
     }
 
     public static void CopyFrom(AppSettings source)
     {
-        Current._colors = new Dictionary<string, string>(source._colors);
-        Current._flags  = new Dictionary<string, bool>(source._flags);
+        Current._colors  = new Dictionary<string, string>(source._colors);
+        Current._flags   = new Dictionary<string, bool>(source._flags);
+        Current._strings = new Dictionary<string, string>(source._strings);
     }
 
     /// <summary>Pushes all stored colors into WPF Application.Resources.</summary>
@@ -102,8 +115,9 @@ public class AppSettings
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
             var payload = new Dictionary<string, object>
             {
-                ["colors"] = _colors,
-                ["flags"]  = _flags
+                ["colors"]  = _colors,
+                ["flags"]   = _flags,
+                ["strings"] = _strings
             };
             File.WriteAllText(_path, JsonSerializer.Serialize(
                 payload, new JsonSerializerOptions { WriteIndented = true }));
@@ -144,6 +158,15 @@ public class AppSettings
                             foreach (var (k, v) in flags)
                                 if (s._flags.ContainsKey(k)) s._flags[k] = v;
                     }
+
+                    if (doc.RootElement.TryGetProperty("strings", out var stringsEl))
+                    {
+                        var strs = JsonSerializer.Deserialize<Dictionary<string, string>>(stringsEl.GetRawText());
+                        if (strs != null)
+                            foreach (var (k, v) in strs)
+                                if (s._strings.ContainsKey(k)) s._strings[k] = v;
+                    }
+
                     return s;
                 }
 

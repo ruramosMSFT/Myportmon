@@ -204,8 +204,12 @@ public partial class MainWindow : Window
             _poller.DnsEnabled       = dlg.DnsEnabled;
             ColRemoteHost.Visibility = dlg.DnsEnabled ? Visibility.Visible : Visibility.Collapsed;
             AppSettings.Current.SetFlag("DnsEnabled", dlg.DnsEnabled);
-            AppSettings.Current.Save();
         }
+
+        // Persist snapshot settings
+        AppSettings.Current.SetString("SnapshotPath",   dlg.SnapshotPath);
+        AppSettings.Current.SetString("SnapshotFormat", dlg.SnapshotFormat);
+        AppSettings.Current.Save();
 
         // Handle action buttons
         if (dlg.DidReset)
@@ -321,4 +325,68 @@ public partial class MainWindow : Window
         dlg.ShowDialog();
         _timer.Start();
     }
+
+    // ── Snapshot export ───────────────────────────────────────────────────────
+
+    private void Snapshot_Click(object sender, RoutedEventArgs e)
+    {
+        if (_rows.Count == 0)
+        {
+            StatusRefresh.Text = "Snapshot: no data to export";
+            return;
+        }
+
+        string folder = AppSettings.Current.GetString("SnapshotPath");
+        string format = AppSettings.Current.GetString("SnapshotFormat");
+
+        if (string.IsNullOrWhiteSpace(folder) || !System.IO.Directory.Exists(folder))
+        {
+            StatusRefresh.Text = "Snapshot: invalid export folder — configure in Settings";
+            return;
+        }
+
+        string ext  = format == "text" ? "txt" : "csv";
+        string name = $"PortMonitor_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}";
+        string path = System.IO.Path.Combine(folder, name);
+
+        try
+        {
+            using var sw = new System.IO.StreamWriter(path, false, System.Text.Encoding.UTF8);
+
+            if (format == "csv")
+            {
+                sw.WriteLine("Tag,Protocol,LocalAddress,LocalPort,RemoteAddress,RemotePort,State,PID,Process,RemoteHost");
+                foreach (var r in _rows)
+                {
+                    sw.WriteLine($"{Esc(r.Tag)},{Esc(r.Protocol)},{Esc(r.LocalAddress)},{r.LocalPort}," +
+                                 $"{Esc(r.RemoteAddress)},{Esc(r.RemotePortDisplay)},{Esc(r.StateDisplay)}," +
+                                 $"{Esc(r.Pid)},{Esc(r.ProcessName)},{Esc(r.RemoteHost)}");
+                }
+            }
+            else
+            {
+                sw.WriteLine($"PortMonitor Snapshot — {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                sw.WriteLine($"Connections: {_rows.Count}");
+                sw.WriteLine(new string('-', 120));
+                sw.WriteLine($"{"Tag",-6} {"Proto",-5} {"Local Address",-16} {"L.Port",-7} {"Remote Address",-16} " +
+                             $"{"R.Port",-7} {"State",-14} {"PID",-7} {"Process",-18} {"Remote Host"}");
+                sw.WriteLine(new string('-', 120));
+                foreach (var r in _rows)
+                {
+                    sw.WriteLine($"{r.Tag,-6} {r.Protocol,-5} {r.LocalAddress,-16} {r.LocalPort,-7} " +
+                                 $"{r.RemoteAddress,-16} {r.RemotePortDisplay,-7} {r.StateDisplay,-14} " +
+                                 $"{r.Pid,-7} {r.ProcessName,-18} {r.RemoteHost}");
+                }
+            }
+
+            StatusRefresh.Text = $"Snapshot saved: {name}";
+        }
+        catch (Exception ex)
+        {
+            StatusRefresh.Text = $"Snapshot error: {ex.Message}";
+        }
+    }
+
+    private static string Esc(string v) =>
+        v.Contains(',') || v.Contains('"') ? $"\"{v.Replace("\"", "\"\"")}\"" : v;
 }

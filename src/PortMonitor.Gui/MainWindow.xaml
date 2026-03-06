@@ -39,6 +39,15 @@
                         Click="Settings_Click"
                         ToolTip="Application settings" />
 
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"
+                           Background="{DynamicResource BorderBrush}" Margin="6,0" />
+
+                <Button Content="📷 Snapshot"
+                        Margin="2,0"
+                        Padding="8,3"
+                        Click="Snapshot_Click"
+                        ToolTip="Export current connections to file (format and folder configured in Settings)" />
+
             </WrapPanel>
         </Border>
 
